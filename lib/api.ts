@@ -40,3 +40,21 @@ export const backendRedeemInvite = (token: string, code: string) =>
   call<{ id: string; unitId: string; status: string }>("/invite-codes/redeem",
     { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ code }) },
     { 404: MESSAGES.invite.invalid });
+
+function authGet<T>(path: string, token: string) {
+  return call<T>(path, { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    { 401: MESSAGES.auth.invalidCredentials });
+}
+
+export type Me = { id: string; email: string; role: "OWNER" | "TENANT" | "ADMIN" };
+export type Lease = { id: string; unitId: string; status: "ACTIVE" | "ENDED" };
+export type Building = { id: string; name: string; address: string };
+export type Notification = { id: string; type: string; payload: Record<string, unknown>; readAt: string | null; createdAt?: string };
+export type ChatRoom = { id: string; buildingId?: string };
+
+export const backendMe = (t: string) => authGet<Me>("/auth/me", t);
+export const backendMyLeases = (t: string) => authGet<Lease[]>("/me/leases", t);
+export const backendMyBuildings = (t: string) => authGet<Building[]>("/buildings", t);
+export const backendNotifications = (t: string, limit = 5) => authGet<Notification[]>(`/notifications?limit=${limit}`, t);
+export const backendUnreadCount = (t: string) => authGet<{ count: number }>("/notifications/unread-count", t);
+export const backendChatRooms = (t: string) => authGet<ChatRoom[]>("/chat/rooms", t);
