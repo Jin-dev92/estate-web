@@ -200,3 +200,10 @@ String(field ?? "").trim()
 - `lib/api/` 아래 도메인 파일(`auth`·`invite`·`lease`·`building`·`notification`·`chat`)에 함수·타입을 두고, 공유 인프라(`ApiError`·`call`·`authGet`)는 `lib/api/client.ts`에 둔다.
 - `lib/api/index.ts` 배럴이 전체를 re-export하고, 소비자는 `@/lib/api`에서 가져온다(도메인 경계는 파일로, 진입점은 배럴 하나).
 - 새 도메인 API가 생기면 새 파일로 추가하고 배럴에 한 줄 export를 더한다.
+
+## 폼 (Forms)
+
+폼은 **react-hook-form + zod**로 작성한다(상태 수기 관리·산발 검증 금지).
+- 검증 스키마는 `lib/schemas.ts`에 zod로 정의하고 `zodResolver`로 연결한다.
+- 검증/에러 메시지는 `lib/messages.ts`(`MESSAGES`)를 참조해 카피 단일 출처를 유지한다.
+- 필드 에러는 `Field`의 `error` prop으로, 서버 에러는 폼 상단 메시지로 표시한다.
