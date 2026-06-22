@@ -1,9 +1,11 @@
 "use client";
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { isEmail, isPassword, isInviteCode } from "@/lib/validation";
+import { inviteCodeSchema, signupSchema, type InviteCodeInput, type SignupInput } from "@/lib/schemas";
 import { ROLE, API_ROUTES } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
@@ -11,43 +13,46 @@ function TenantSignupInner() {
   const router = useRouter();
   const prefill = useSearchParams().get("code") ?? "";
   const [step, setStep] = useState<"code" | "form" | "done">("code");
-  const [code, setCode] = useState(prefill);
   const [unit, setUnit] = useState<{ buildingName?: string; unitName?: string }>({});
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [k]: e.target.value });
 
-  async function checkCode(e: React.FormEvent) {
-    e.preventDefault(); setError("");
-    if (!isInviteCode(code)) { setError(MESSAGES.invite.required); return; }
+  const codeForm = useForm<InviteCodeInput>({
+    resolver: zodResolver(inviteCodeSchema),
+    defaultValues: { code: prefill },
+  });
+
+  const accountForm = useForm<SignupInput>({
+    resolver: zodResolver(signupSchema),
+  });
+
+  async function onCodeValid(data: InviteCodeInput) {
+    setServerError("");
     setLoading(true);
     // 미인증 미리보기는 클라가 직접 백엔드 대신 자기 라우트로? → 단순화: 백엔드 직접(GET, 공개)
-    const res = await fetch(`${API_ROUTES.invitePreview}?code=${encodeURIComponent(code)}`);
+    const res = await fetch(`${API_ROUTES.invitePreview}?code=${encodeURIComponent(data.code)}`);
     setLoading(false);
-    const data = await res.json();
-    if (data.valid) { setUnit(data); setStep("form"); }
-    else setError(MESSAGES.invite.invalid);
+    const json = await res.json();
+    if (json.valid) { setUnit(json); setStep("form"); }
+    else setServerError(MESSAGES.invite.invalid);
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault(); setError("");
-    if (!form.name || !isEmail(form.email) || !isPassword(form.password)) {
-      setError(MESSAGES.form.signupInvalid); return;
-    }
+  async function onAccountValid(data: SignupInput) {
+    setServerError("");
     setLoading(true);
+    const code = codeForm.getValues("code");
     const res = await fetch(API_ROUTES.signup, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, role: ROLE.TENANT, code }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, role: ROLE.TENANT, code }),
     });
     setLoading(false);
-    if (res.ok) setStep("done");
+    if (res.ok) { setStep("done"); }
     else {
       const d = await res.json();
       // redeem 경합(404): 코드 재입력으로
-      if (d.status === 404) { setError(MESSAGES.invite.raceExpired); setStep("code"); }
-      else setError(d.message ?? MESSAGES.auth.signupFailed);
+      if (d.status === 404) { setServerError(MESSAGES.invite.raceExpired); setStep("code"); }
+      else setServerError(d.message ?? MESSAGES.auth.signupFailed);
     }
   }
 
@@ -55,26 +60,35 @@ function TenantSignupInner() {
     <main className="flex-1 grid place-items-center px-6">
       <div className="w-full max-w-sm">
         {step === "code" && (
-          <form onSubmit={checkCode}>
+          <form onSubmit={codeForm.handleSubmit(onCodeValid)}>
             <h1 className="mb-6 text-[24px] font-extrabold tracking-tight text-text">초대코드 입력</h1>
-            <Field label="초대코드" value={code} onChange={(e) => setCode(e.target.value)} placeholder="예: A1B2C3D4" />
-            {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
-            <div className="mt-6"><Button type="submit" disabled={loading}>{loading ? "확인 중…" : "다음"}</Button></div>
+            <Field
+              label="초대코드"
+              placeholder="예: A1B2C3D4"
+              error={codeForm.formState.errors.code?.message}
+              {...codeForm.register("code")}
+            />
+            {serverError && <p className="mt-3 text-[13px] text-danger">{serverError}</p>}
+            <div className="mt-6">
+              <Button type="submit" disabled={loading}>{loading ? "확인 중…" : "다음"}</Button>
+            </div>
           </form>
         )}
         {step === "form" && (
-          <form onSubmit={submit}>
+          <form onSubmit={accountForm.handleSubmit(onAccountValid)}>
             <h1 className="mb-1 text-[24px] font-extrabold tracking-tight text-text">계정 만들기</h1>
             <p className="mb-6 text-[15px] text-text-2">
               <b className="text-text">{unit.buildingName} {unit.unitName}</b> 입주
             </p>
             <div className="flex flex-col gap-3">
-              <Field label="이름" value={form.name} onChange={set("name")} />
-              <Field label="이메일" type="email" value={form.email} onChange={set("email")} />
-              <Field label="비밀번호" type="password" value={form.password} onChange={set("password")} />
+              <Field label="이름" error={accountForm.formState.errors.name?.message} {...accountForm.register("name")} />
+              <Field label="이메일" type="email" error={accountForm.formState.errors.email?.message} {...accountForm.register("email")} />
+              <Field label="비밀번호" type="password" error={accountForm.formState.errors.password?.message} {...accountForm.register("password")} />
             </div>
-            {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
-            <div className="mt-6"><Button type="submit" disabled={loading}>{loading ? "처리 중…" : "가입하고 입주하기"}</Button></div>
+            {serverError && <p className="mt-3 text-[13px] text-danger">{serverError}</p>}
+            <div className="mt-6">
+              <Button type="submit" disabled={loading}>{loading ? "처리 중…" : "가입하고 입주하기"}</Button>
+            </div>
           </form>
         )}
         {step === "done" && (
