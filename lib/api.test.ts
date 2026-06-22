@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { backendLogin, ApiError } from "@/lib/api";
 
 it("401이면 ApiError('이메일 또는 비밀번호를 확인하세요')", async () => {
