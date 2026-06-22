@@ -11,3 +11,19 @@ export const API_ROUTES = {
   signup: "/api/session/signup",
   invitePreview: "/api/invite-preview",
 } as const;
+
+/** 앱 페이지 경로(네비게이션 단일 출처) */
+export const PAGE_ROUTES = {
+  dashboard: "/dashboard",
+  login: "/login",
+  signup: "/signup",
+  board: "/board",
+  chat: "/chat",
+  buildings: "/buildings",
+  inviteCodes: "/invite-codes",
+  notifications: "/notifications",
+} as const;
+
+/** 임대 상태 */
+export const LEASE_STATUS = { ACTIVE: "ACTIVE", ENDED: "ENDED" } as const;
+export type LeaseStatus = (typeof LEASE_STATUS)[keyof typeof LEASE_STATUS];
