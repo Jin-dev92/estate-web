@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { backendSignup, backendLogin, backendRedeemInvite, ApiError } from "@/lib/api";
 import { setSession } from "@/lib/session";
 import { ROLE } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
     const err = e as ApiError;
     // redeem 경합(404): 계정은 생성됐으므로 클라가 "코드 재입력"으로 보냄
     return NextResponse.json(
-      { message: err.message ?? "가입 처리 실패", status: err.status },
+      { message: err.message ?? MESSAGES.auth.signupFailed, status: err.status },
       { status: err.status ?? 500 },
     );
   }

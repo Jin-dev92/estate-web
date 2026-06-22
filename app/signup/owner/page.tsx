@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { isEmail, isPassword } from "@/lib/validation";
 import { ROLE, API_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 export default function OwnerSignup() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function OwnerSignup() {
     e.preventDefault();
     setError("");
     if (!form.name || !isEmail(form.email) || !isPassword(form.password)) {
-      setError("입력값을 확인해주세요(비밀번호 8자 이상)"); return;
+      setError(MESSAGES.form.signupInvalid); return;
     }
     setLoading(true);
     const res = await fetch(API_ROUTES.signup, {
@@ -27,7 +28,7 @@ export default function OwnerSignup() {
     });
     setLoading(false);
     if (res.ok) router.push("/dashboard");
-    else setError((await res.json()).message ?? "가입 실패");
+    else setError((await res.json()).message ?? MESSAGES.auth.signupFailed);
   }
 
   return (

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { isEmail, isPassword } from "@/lib/validation";
 import { API_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!isEmail(email) || !isPassword(password)) { setError("이메일/비밀번호를 확인하세요"); return; }
+    if (!isEmail(email) || !isPassword(password)) { setError(MESSAGES.auth.invalidCredentials); return; }
     setLoading(true);
     const res = await fetch(API_ROUTES.session, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -25,7 +26,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (res.ok) router.push("/dashboard");
-    else setError((await res.json()).message ?? "로그인 실패");
+    else setError((await res.json()).message ?? MESSAGES.auth.loginFailed);
   }
 
   return (

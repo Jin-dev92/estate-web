@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { backendLogin, ApiError } from "@/lib/api";
 import { setSession, clearSession } from "@/lib/session";
+import { MESSAGES } from "@/lib/messages";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     const err = e as ApiError;
-    return NextResponse.json({ message: err.message ?? "로그인 실패" }, { status: err.status ?? 500 });
+    return NextResponse.json({ message: err.message ?? MESSAGES.auth.loginFailed }, { status: err.status ?? 500 });
   }
 }
 

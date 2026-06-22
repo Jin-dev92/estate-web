@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { isEmail, isPassword, isInviteCode } from "@/lib/validation";
 import { ROLE, API_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 function TenantSignupInner() {
   const router = useRouter();
@@ -20,20 +21,20 @@ function TenantSignupInner() {
 
   async function checkCode(e: React.FormEvent) {
     e.preventDefault(); setError("");
-    if (!isInviteCode(code)) { setError("초대코드를 입력하세요"); return; }
+    if (!isInviteCode(code)) { setError(MESSAGES.invite.required); return; }
     setLoading(true);
     // 미인증 미리보기는 클라가 직접 백엔드 대신 자기 라우트로? → 단순화: 백엔드 직접(GET, 공개)
     const res = await fetch(`${API_ROUTES.invitePreview}?code=${encodeURIComponent(code)}`);
     setLoading(false);
     const data = await res.json();
     if (data.valid) { setUnit(data); setStep("form"); }
-    else setError("유효하지 않거나 만료된 초대코드입니다");
+    else setError(MESSAGES.invite.invalid);
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setError("");
     if (!form.name || !isEmail(form.email) || !isPassword(form.password)) {
-      setError("입력값을 확인해주세요(비밀번호 8자 이상)"); return;
+      setError(MESSAGES.form.signupInvalid); return;
     }
     setLoading(true);
     const res = await fetch(API_ROUTES.signup, {
@@ -45,8 +46,8 @@ function TenantSignupInner() {
     else {
       const d = await res.json();
       // redeem 경합(404): 코드 재입력으로
-      if (d.status === 404) { setError("코드가 막 만료/사용되었어요. 다시 입력해주세요."); setStep("code"); }
-      else setError(d.message ?? "가입 실패");
+      if (d.status === 404) { setError(MESSAGES.invite.raceExpired); setStep("code"); }
+      else setError(d.message ?? MESSAGES.auth.signupFailed);
     }
   }
 
