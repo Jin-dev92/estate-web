@@ -5,9 +5,10 @@ import { RecentActivity } from "./recent-activity";
 import { ChatSummary } from "./chat-summary";
 import Link from "next/link";
 import type { Lease, Notification, ChatRoom } from "@/lib/api";
+import { PAGE_ROUTES, LEASE_STATUS } from "@/lib/constants";
 
 export function TenantHome({ leases, notifications, chatRooms }: { leases: Lease[]; notifications: Notification[]; chatRooms: ChatRoom[] }) {
-  const active = leases.filter((l) => l.status === "ACTIVE");
+  const active = leases.filter((l) => l.status === LEASE_STATUS.ACTIVE);
   return (
     <>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">내 계약</h1>
@@ -22,8 +23,8 @@ export function TenantHome({ leases, notifications, chatRooms }: { leases: Lease
           ))}
       </Card>
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Link href="/board" className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">공지·게시판</Link>
-        <Link href="/chat" className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">1:1 채팅</Link>
+        <Link href={PAGE_ROUTES.board} className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">공지·게시판</Link>
+        <Link href={PAGE_ROUTES.chat} className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">1:1 채팅</Link>
       </div>
       <RecentActivity items={notifications} />
       <ChatSummary rooms={chatRooms} />

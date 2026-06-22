@@ -191,3 +191,5 @@ String(field ?? "").trim()
 - 같은 문자열이 2곳 이상에서 쓰이면 즉시 상수로 추출한다(DRY). 리뷰 시 새 매직 스트링이 보이면 상수화부터 요구한다.
 - **식별자 vs 카피 구분**: 결합용 식별자(쿠키·키·역할·API 경로)는 `lib/constants.ts`, 사용자 노출 문구(에러·안내 메시지)는 `lib/messages.ts`에 둔다. 둘을 한 파일에 섞지 않는다.
 - 같은 상황의 메시지는 한 곳(`MESSAGES`)에서만 정의해 문구 불일치·중복을 막는다. 다국어가 필요해지면 `MESSAGES`를 i18n 카탈로그로 승격한다.
+- **페이지 라우트**(네비게이션 경로 `/login`·`/dashboard`·`/board` 등)는 `lib/constants.ts`의 `PAGE_ROUTES`를 사용한다. `href`/`redirect`/`router.push`에 경로 리터럴을 직접 쓰지 않는다.
+- **도메인 상태·enum 값**(역할 `ROLE`, 임대 상태 `LEASE_STATUS` 등)은 상수로 정의하고 비교·전달에 리터럴(`"ACTIVE"`, `"OWNER"` 등)을 직접 쓰지 않는다.

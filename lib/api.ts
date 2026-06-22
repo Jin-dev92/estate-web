@@ -1,5 +1,5 @@
 import { BACKEND_URL } from "./env";
-import { SignupRole } from "./constants";
+import { SignupRole, LeaseStatus } from "./constants";
 import { MESSAGES } from "./messages";
 export type { SignupRole };
 
@@ -47,7 +47,7 @@ function authGet<T>(path: string, token: string) {
 }
 
 export type Me = { id: string; email: string; role: "OWNER" | "TENANT" | "ADMIN" };
-export type Lease = { id: string; unitId: string; status: "ACTIVE" | "ENDED" };
+export type Lease = { id: string; unitId: string; status: LeaseStatus };
 export type Building = { id: string; name: string; address: string };
 export type Notification = { id: string; type: string; payload: Record<string, unknown>; readAt: string | null; createdAt?: string };
 export type ChatRoom = { id: string; buildingId?: string };
