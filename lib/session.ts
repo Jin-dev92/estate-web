@@ -1,10 +1,9 @@
 import { cookies } from "next/headers";
-
-const NAME = "session";
+import { SESSION_COOKIE } from "./constants";
 
 export function sessionCookie(token: string) {
   return {
-    name: NAME,
+    name: SESSION_COOKIE,
     value: token,
     options: {
       httpOnly: true as const,
@@ -21,8 +20,8 @@ export async function setSession(token: string) {
   (await cookies()).set(c.name, c.value, c.options);
 }
 export async function clearSession() {
-  (await cookies()).delete(NAME);
+  (await cookies()).delete(SESSION_COOKIE);
 }
 export async function getToken(): Promise<string | null> {
-  return (await cookies()).get(NAME)?.value ?? null;
+  return (await cookies()).get(SESSION_COOKIE)?.value ?? null;
 }

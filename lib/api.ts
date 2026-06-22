@@ -1,4 +1,6 @@
 import { BACKEND_URL } from "./env";
+import { SignupRole } from "./constants";
+export type { SignupRole };
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -18,8 +20,6 @@ async function call<T>(path: string, init: RequestInit, errorMap: Record<number,
   }
   return (await res.json()) as T;
 }
-
-export type SignupRole = "OWNER" | "TENANT";
 
 export const backendSignup = (email: string, name: string, password: string, role: SignupRole) =>
   call<{ id: string; email: string; role: string }>("/auth/signup",

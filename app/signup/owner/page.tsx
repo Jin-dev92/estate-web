@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { isEmail, isPassword } from "@/lib/validation";
+import { ROLE, API_ROUTES } from "@/lib/constants";
 
 export default function OwnerSignup() {
   const router = useRouter();
@@ -20,9 +21,9 @@ export default function OwnerSignup() {
       setError("입력값을 확인해주세요(비밀번호 8자 이상)"); return;
     }
     setLoading(true);
-    const res = await fetch("/api/session/signup", {
+    const res = await fetch(API_ROUTES.signup, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, role: "OWNER" }),
+      body: JSON.stringify({ ...form, role: ROLE.OWNER }),
     });
     setLoading(false);
     if (res.ok) router.push("/dashboard");

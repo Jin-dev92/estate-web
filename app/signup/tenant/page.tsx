@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { isEmail, isPassword, isInviteCode } from "@/lib/validation";
+import { ROLE, API_ROUTES } from "@/lib/constants";
 
 function TenantSignupInner() {
   const router = useRouter();
@@ -22,7 +23,7 @@ function TenantSignupInner() {
     if (!isInviteCode(code)) { setError("초대코드를 입력하세요"); return; }
     setLoading(true);
     // 미인증 미리보기는 클라가 직접 백엔드 대신 자기 라우트로? → 단순화: 백엔드 직접(GET, 공개)
-    const res = await fetch(`/api/invite-preview?code=${encodeURIComponent(code)}`);
+    const res = await fetch(`${API_ROUTES.invitePreview}?code=${encodeURIComponent(code)}`);
     setLoading(false);
     const data = await res.json();
     if (data.valid) { setUnit(data); setStep("form"); }
@@ -35,9 +36,9 @@ function TenantSignupInner() {
       setError("입력값을 확인해주세요(비밀번호 8자 이상)"); return;
     }
     setLoading(true);
-    const res = await fetch("/api/session/signup", {
+    const res = await fetch(API_ROUTES.signup, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, role: "TENANT", code }),
+      body: JSON.stringify({ ...form, role: ROLE.TENANT, code }),
     });
     setLoading(false);
     if (res.ok) setStep("done");

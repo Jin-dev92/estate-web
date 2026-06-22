@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { isEmail, isPassword } from "@/lib/validation";
+import { API_ROUTES } from "@/lib/constants";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function LoginPage() {
     setError("");
     if (!isEmail(email) || !isPassword(password)) { setError("이메일/비밀번호를 확인하세요"); return; }
     setLoading(true);
-    const res = await fetch("/api/session", {
+    const res = await fetch(API_ROUTES.session, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });

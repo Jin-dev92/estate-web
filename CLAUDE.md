@@ -181,3 +181,11 @@ field.trim()
 // ✅ GOOD
 String(field ?? "").trim()
 ```
+
+## 매직 스트링 금지 (No Magic Strings)
+
+의미 있는/반복되는 문자열 리터럴(쿠키·스토리지 키, 역할, 내부 API 라우트 등)을 코드 곳곳에 직접 쓰지 않는다. `lib/constants.ts`에 모아 단일 출처로 두고 import해서 쓴다.
+
+- 세션 쿠키명·역할(OWNER/TENANT)·내부 API 경로(`/api/*`)는 각각 `SESSION_COOKIE`, `ROLE`, `API_ROUTES`(`lib/constants.ts`)를 사용한다.
+- 역할처럼 값이 정해진 닫힌 집합은 `as const` 객체 + 파생 유니온 타입으로 정의해 타입 안전성을 확보한다(`ROLE`, `SignupRole`).
+- 같은 문자열이 2곳 이상에서 쓰이면 즉시 상수로 추출한다(DRY). 리뷰 시 새 매직 스트링이 보이면 상수화부터 요구한다.
