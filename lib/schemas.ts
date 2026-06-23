@@ -27,6 +27,6 @@ export type BuildingInput = z.infer<typeof buildingSchema>;
 
 export const unitSchema = z.object({
   name: z.string().min(1, MESSAGES.form.invalidInput),
-  floor: z.coerce.number().int(),
+  floor: z.string().transform((v) => parseInt(v, 10)).pipe(z.number().int()),
 });
 export type UnitInput = z.infer<typeof unitSchema>;
