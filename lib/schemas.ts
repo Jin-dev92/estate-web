@@ -18,3 +18,15 @@ export const inviteCodeSchema = z.object({
   code: z.string().min(1, MESSAGES.invite.required),
 });
 export type InviteCodeInput = z.infer<typeof inviteCodeSchema>;
+
+export const buildingSchema = z.object({
+  name: z.string().min(1, MESSAGES.form.invalidInput),
+  address: z.string().min(1, MESSAGES.form.invalidInput),
+});
+export type BuildingInput = z.infer<typeof buildingSchema>;
+
+export const unitSchema = z.object({
+  name: z.string().min(1, MESSAGES.form.invalidInput),
+  floor: z.coerce.number().int(),
+});
+export type UnitInput = z.infer<typeof unitSchema>;

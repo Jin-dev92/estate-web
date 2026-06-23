@@ -20,6 +20,7 @@ export const PAGE_ROUTES = {
   board: "/board",
   chat: "/chat",
   buildings: "/buildings",
+  buildingDetail: (id: string) => `/buildings/${id}`,
   inviteCodes: "/invite-codes",
   notifications: "/notifications",
 } as const;
