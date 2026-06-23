@@ -33,7 +33,7 @@ export const unitSchema = z.object({
 export type UnitInput = z.infer<typeof unitSchema>;
 
 export const postSchema = z.object({
-  category: z.enum([POST_CATEGORY.NOTICE, POST_CATEGORY.FREE]).default(POST_CATEGORY.FREE),
+  category: z.enum([POST_CATEGORY.NOTICE, POST_CATEGORY.FREE]),
   title: z.string().min(1, MESSAGES.form.invalidInput),
   content: z.string().min(1, MESSAGES.form.invalidInput),
 });
