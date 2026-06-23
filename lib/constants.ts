@@ -15,6 +15,7 @@ export const API_ROUTES = {
   unitInviteCodes: (id: string) => `/api/units/${id}/invite-codes`,
   buildingPosts: (id: string) => `/api/buildings/${id}/posts`,
   postComments: (id: string) => `/api/posts/${id}/comments`,
+  chatRooms: "/api/chat/rooms",
 } as const;
 
 /** 앱 페이지 경로(네비게이션 단일 출처) */
@@ -26,6 +27,7 @@ export const PAGE_ROUTES = {
   board: (b: string) => `/board/${b}`,
   boardPost: (b: string, p: string) => `/board/${b}/${p}`,
   chat: "/chat",
+  chatRoom: (id: string) => `/chat/${id}`,
   buildings: "/buildings",
   buildingDetail: (id: string) => `/buildings/${id}`,
   inviteCodes: "/invite-codes",
