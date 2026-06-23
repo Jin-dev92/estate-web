@@ -13,6 +13,8 @@ export const API_ROUTES = {
   buildings: "/api/buildings",
   buildingUnits: (id: string) => `/api/buildings/${id}/units`,
   unitInviteCodes: (id: string) => `/api/units/${id}/invite-codes`,
+  buildingPosts: (id: string) => `/api/buildings/${id}/posts`,
+  postComments: (id: string) => `/api/posts/${id}/comments`,
 } as const;
 
 /** 앱 페이지 경로(네비게이션 단일 출처) */
@@ -20,13 +22,25 @@ export const PAGE_ROUTES = {
   dashboard: "/dashboard",
   login: "/login",
   signup: "/signup",
-  board: "/board",
+  boardHome: "/board",
+  board: (b: string) => `/board/${b}`,
+  boardPost: (b: string, p: string) => `/board/${b}/${p}`,
   chat: "/chat",
   buildings: "/buildings",
   buildingDetail: (id: string) => `/buildings/${id}`,
   inviteCodes: "/invite-codes",
   notifications: "/notifications",
 } as const;
+
+/** 게시글 카테고리 (백엔드 enum 동기화) */
+export const POST_CATEGORY = { NOTICE: "NOTICE", FREE: "FREE" } as const;
+export type PostCategory = (typeof POST_CATEGORY)[keyof typeof POST_CATEGORY];
+
+/** 게시글 카테고리 표시 라벨 (단일 출처) */
+export const POST_CATEGORY_LABEL: Record<PostCategory, string> = {
+  [POST_CATEGORY.NOTICE]: "공지",
+  [POST_CATEGORY.FREE]: "자유",
+};
 
 /** 임대 상태 */
 export const LEASE_STATUS = { ACTIVE: "ACTIVE", ENDED: "ENDED" } as const;

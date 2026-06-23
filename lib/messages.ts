@@ -25,4 +25,15 @@ export const MESSAGES = {
   },
   building: { createFailed: "건물 생성에 실패했어요. 잠시 후 다시 시도해주세요." },
   unit: { createFailed: "호실 생성에 실패했어요. 잠시 후 다시 시도해주세요." },
+  board: {
+    createFailed: "글 작성에 실패했어요. 잠시 후 다시 시도해주세요.",
+    noBuildingTenant: "연결된 건물이 없어요",
+    noBuildingOwner: "건물을 먼저 등록하세요",
+    postNotFound: "글을 찾을 수 없어요",
+    empty: "아직 글이 없어요",
+  },
+  comment: {
+    createFailed: "댓글 작성에 실패했어요. 잠시 후 다시 시도해주세요.",
+    empty: "아직 댓글이 없어요.",
+  },
 } as const;

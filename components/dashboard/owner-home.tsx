@@ -22,7 +22,7 @@ export function OwnerHome({ buildings, notifications, chatRooms }: { buildings: 
       <div className="mt-4 grid grid-cols-3 gap-2">
         <Link href={PAGE_ROUTES.buildings} className="rounded-[14px] bg-surface-2 py-3 text-center text-[13px] font-semibold">건물 관리</Link>
         <Link href={PAGE_ROUTES.inviteCodes} className="rounded-[14px] bg-surface-2 py-3 text-center text-[13px] font-semibold">초대코드</Link>
-        <Link href={PAGE_ROUTES.board} className="rounded-[14px] bg-surface-2 py-3 text-center text-[13px] font-semibold">게시판</Link>
+        <Link href={PAGE_ROUTES.boardHome} className="rounded-[14px] bg-surface-2 py-3 text-center text-[13px] font-semibold">게시판</Link>
       </div>
       <RecentActivity items={notifications} />
       <ChatSummary rooms={chatRooms} />

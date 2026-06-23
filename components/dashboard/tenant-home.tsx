@@ -23,7 +23,7 @@ export function TenantHome({ leases, notifications, chatRooms }: { leases: Lease
           ))}
       </Card>
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Link href={PAGE_ROUTES.board} className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">공지·게시판</Link>
+        <Link href={PAGE_ROUTES.boardHome} className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">공지·게시판</Link>
         <Link href={PAGE_ROUTES.chat} className="rounded-[14px] bg-surface-2 py-3 text-center text-[14px] font-semibold">1:1 채팅</Link>
       </div>
       <RecentActivity items={notifications} />
