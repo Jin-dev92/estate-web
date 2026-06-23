@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MESSAGES } from "./messages";
+import { POST_CATEGORY } from "./constants";
 
 export const loginSchema = z.object({
   email: z.email(MESSAGES.auth.invalidCredentials),
@@ -30,3 +31,13 @@ export const unitSchema = z.object({
   floor: z.string().transform((v) => parseInt(v, 10)).pipe(z.number().int()),
 });
 export type UnitInput = z.infer<typeof unitSchema>;
+
+export const postSchema = z.object({
+  category: z.enum([POST_CATEGORY.NOTICE, POST_CATEGORY.FREE]).default(POST_CATEGORY.FREE),
+  title: z.string().min(1, MESSAGES.form.invalidInput),
+  content: z.string().min(1, MESSAGES.form.invalidInput),
+});
+export type PostInput = z.infer<typeof postSchema>;
+
+export const commentSchema = z.object({ content: z.string().min(1, MESSAGES.form.invalidInput) });
+export type CommentInput = z.infer<typeof commentSchema>;

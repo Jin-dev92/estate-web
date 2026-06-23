@@ -6,3 +6,4 @@ export * from "./building";
 export * from "./unit";
 export * from "./notification";
 export * from "./chat";
+export * from "./board";
