@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
-import { backendGetPost } from "@/lib/api";
+import { backendGetPost, backendMe } from "@/lib/api";
 import { AppShell } from "@/components/ui/app-shell";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListRow } from "@/components/ui/list-row";
 import { CommentForm } from "@/components/board/comment-form";
-import { PAGE_ROUTES, POST_CATEGORY, POST_CATEGORY_LABEL } from "@/lib/constants";
+import { StartChatButton } from "@/components/chat/start-chat-button";
+import { PAGE_ROUTES, POST_CATEGORY, POST_CATEGORY_LABEL, ROLE } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
 export default async function BoardPostPage({
@@ -18,7 +19,7 @@ export default async function BoardPostPage({
   const token = await getToken();
   if (!token) redirect(PAGE_ROUTES.login);
 
-  const { postId } = await params;
+  const { buildingId, postId } = await params;
 
   let post;
   try {
@@ -30,6 +31,11 @@ export default async function BoardPostPage({
       </AppShell>
     );
   }
+
+  let me = null;
+  try {
+    me = await backendMe(token);
+  } catch {}
 
   const tone = post.category === POST_CATEGORY.NOTICE ? "warning" : "neutral";
   const label = POST_CATEGORY_LABEL[post.category];
@@ -45,6 +51,10 @@ export default async function BoardPostPage({
         <h1 className="mb-4 text-[20px] font-extrabold tracking-tight">{post.title}</h1>
         <p className="whitespace-pre-wrap text-[15px] text-text leading-relaxed">{post.content}</p>
       </Card>
+
+      {me?.role === ROLE.OWNER && me.id !== post.authorId && (
+        <StartChatButton buildingId={buildingId} tenantId={post.authorId} label="작성자와 채팅" />
+      )}
 
       <section className="mt-6">
         <h2 className="mb-3 text-[16px] font-bold text-text">댓글 {post.comments.length}개</h2>

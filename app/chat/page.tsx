@@ -7,7 +7,8 @@ import { AppShell } from "@/components/ui/app-shell";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListRow } from "@/components/ui/list-row";
-import { PAGE_ROUTES, ROLE } from "@/lib/constants";
+import { StartChatButton } from "@/components/chat/start-chat-button";
+import { PAGE_ROUTES, ROLE, LEASE_STATUS } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
 export default async function ChatListPage() {
@@ -30,15 +31,18 @@ export default async function ChatListPage() {
 
   // buildingId → 건물명 매핑(역할별 소스).
   const buildingNameById = new Map<string, string>();
+  let activeBuildingId: string | null = null;
   if (me.role === ROLE.OWNER) {
     try {
       (await backendMyBuildings(token)).forEach((b) => buildingNameById.set(b.id, b.name));
     } catch {}
   } else {
     try {
-      (await backendMyLeases(token)).forEach((l) => {
+      const leases = await backendMyLeases(token);
+      leases.forEach((l) => {
         if (l.buildingId && l.buildingName) buildingNameById.set(l.buildingId, l.buildingName);
       });
+      activeBuildingId = leases.find((l) => l.status === LEASE_STATUS.ACTIVE && l.buildingId)?.buildingId ?? null;
     } catch {}
   }
 
@@ -48,7 +52,12 @@ export default async function ChatListPage() {
     <AppShell unread={0} userInitial={initial}>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">채팅</h1>
       {rooms.length === 0 ? (
-        <EmptyState text={MESSAGES.chat.empty} />
+        <>
+          <EmptyState text={MESSAGES.chat.empty} />
+          {me.role === ROLE.TENANT && activeBuildingId && (
+            <StartChatButton buildingId={activeBuildingId} tenantId={me.id} label={MESSAGES.chat.startOwner} />
+          )}
+        </>
       ) : (
         <Card className="p-0">
           <div className="divide-y divide-border px-4">
