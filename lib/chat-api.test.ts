@@ -8,6 +8,7 @@ it("backendMyRooms: /chat/rooms를 Bearer로 호출한다", async () => {
   const [url, init] = fetchMock.mock.calls[0];
   expect(String(url)).toMatch(/\/chat\/rooms$/);
   expect((init as RequestInit).method).toBe("GET");
+  expect((init as RequestInit).headers).toMatchObject({ Authorization: "Bearer tok" });
 });
 
 it("backendRoomMessages: roomId·limit 쿼리를 붙인다", async () => {
