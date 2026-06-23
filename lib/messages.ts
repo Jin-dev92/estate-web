@@ -44,5 +44,7 @@ export const MESSAGES = {
     startFailed: "대화를 시작하지 못했어요. 잠시 후 다시 시도해주세요.",
     inputPlaceholder: "메시지를 입력하세요",
     startOwner: "건물주에게 문의하기",
+    startTenant: "작성자와 채팅",
+    starting: "여는 중…",
   },
 } as const;

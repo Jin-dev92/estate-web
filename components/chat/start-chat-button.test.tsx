@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 
@@ -7,6 +7,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 beforeEach(() => {
   push.mockReset();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 it("성공 시 생성된 방으로 이동한다", async () => {

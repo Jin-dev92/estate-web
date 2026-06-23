@@ -40,7 +40,7 @@ export function StartChatButton({
   return (
     <div className="mt-4">
       <Button onClick={start} disabled={loading}>
-        {loading ? "여는 중…" : label}
+        {loading ? MESSAGES.chat.starting : label}
       </Button>
       {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
     </div>

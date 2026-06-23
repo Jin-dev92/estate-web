@@ -53,7 +53,7 @@ export default async function BoardPostPage({
       </Card>
 
       {me?.role === ROLE.OWNER && me.id !== post.authorId && (
-        <StartChatButton buildingId={buildingId} tenantId={post.authorId} label="작성자와 채팅" />
+        <StartChatButton buildingId={buildingId} tenantId={post.authorId} label={MESSAGES.chat.startTenant} />
       )}
 
       <section className="mt-6">
