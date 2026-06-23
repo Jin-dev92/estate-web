@@ -9,3 +9,7 @@ export const backendRedeemInvite = (token: string, code: string) =>
   call<{ id: string; unitId: string; status: string }>("/invite-codes/redeem",
     { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ code }) },
     { 404: MESSAGES.invite.invalid });
+
+export const backendIssueInvite = (t: string, unitId: string) =>
+  call<{ code: string; expiresInSec: number }>(`/units/${unitId}/invite-codes`,
+    { method: "POST", headers: { Authorization: `Bearer ${t}` } }, {});
