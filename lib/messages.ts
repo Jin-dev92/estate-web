@@ -18,8 +18,11 @@ export const MESSAGES = {
     required: "초대코드를 입력하세요",
     invalid: "유효하지 않거나 만료된 초대코드입니다",
     raceExpired: "코드가 막 만료/사용되었어요. 다시 입력해주세요.",
+    issueFailed: "초대코드 발급에 실패했어요. 잠시 후 다시 시도해주세요.",
   },
   common: {
     requestFailed: "요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.",
   },
+  building: { createFailed: "건물 생성에 실패했어요. 잠시 후 다시 시도해주세요." },
+  unit: { createFailed: "호실 생성에 실패했어요. 잠시 후 다시 시도해주세요." },
 } as const;

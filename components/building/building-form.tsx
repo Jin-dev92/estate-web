@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { buildingSchema, type BuildingInput } from "@/lib/schemas";
 import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { API_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 export function BuildingForm() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export function BuildingForm() {
   } = useForm<BuildingInput>({ resolver: zodResolver(buildingSchema) });
 
   async function onValid(v: BuildingInput) {
-    const res = await fetch("/api/buildings", {
+    const res = await fetch(API_ROUTES.buildings, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(v),
@@ -28,7 +30,7 @@ export function BuildingForm() {
       router.refresh();
     } else {
       const json = await res.json();
-      setError("root", { message: json.message ?? "생성 실패" });
+      setError("root", { message: json.message ?? MESSAGES.building.createFailed });
     }
   }
 

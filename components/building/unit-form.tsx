@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { unitSchema, type UnitInput } from "@/lib/schemas";
 import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
+import { API_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 // RHF input: string fields (floor as string before zod transform)
 type UnitFormRaw = { name: string; floor: string };
@@ -21,7 +23,7 @@ export function UnitForm({ buildingId }: { buildingId: string }) {
   } = useForm<UnitFormRaw, unknown, UnitInput>({ resolver: zodResolver(unitSchema) });
 
   async function onValid(v: UnitInput) {
-    const res = await fetch(`/api/buildings/${buildingId}/units`, {
+    const res = await fetch(API_ROUTES.buildingUnits(buildingId), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(v),
@@ -31,7 +33,7 @@ export function UnitForm({ buildingId }: { buildingId: string }) {
       router.refresh();
     } else {
       const json = await res.json();
-      setError("root", { message: json.message ?? "생성 실패" });
+      setError("root", { message: json.message ?? MESSAGES.unit.createFailed });
     }
   }
 

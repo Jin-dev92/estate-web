@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { API_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 
 export function InviteCodeCard({ unitId }: { unitId: string }) {
   const [code, setCode] = useState<string | null>(null);
@@ -14,7 +16,7 @@ export function InviteCodeCard({ unitId }: { unitId: string }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/units/${unitId}/invite-codes`, {
+      const res = await fetch(API_ROUTES.unitInviteCodes(unitId), {
         method: "POST",
       });
       if (res.ok) {
@@ -23,10 +25,10 @@ export function InviteCodeCard({ unitId }: { unitId: string }) {
         setExpiresInSec(data.expiresInSec);
       } else {
         const json = await res.json();
-        setError(json.message ?? "초대코드 발급 실패");
+        setError(json.message ?? MESSAGES.invite.issueFailed);
       }
     } catch {
-      setError("초대코드 발급 중 오류가 발생했어요");
+      setError(MESSAGES.invite.issueFailed);
     } finally {
       setLoading(false);
     }
@@ -41,7 +43,7 @@ export function InviteCodeCard({ unitId }: { unitId: string }) {
 
   const shareLink =
     typeof window !== "undefined" && code
-      ? `${window.location.origin}/invite?code=${code}`
+      ? `${window.location.origin}/invite?code=${encodeURIComponent(code)}`
       : null;
 
   async function copyLink() {

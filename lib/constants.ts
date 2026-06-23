@@ -10,6 +10,9 @@ export const API_ROUTES = {
   session: "/api/session",
   signup: "/api/session/signup",
   invitePreview: "/api/invite-preview",
+  buildings: "/api/buildings",
+  buildingUnits: (id: string) => `/api/buildings/${id}/units`,
+  unitInviteCodes: (id: string) => `/api/units/${id}/invite-codes`,
 } as const;
 
 /** 앱 페이지 경로(네비게이션 단일 출처) */
