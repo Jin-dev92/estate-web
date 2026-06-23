@@ -36,6 +36,12 @@ export const PAGE_ROUTES = {
 export const POST_CATEGORY = { NOTICE: "NOTICE", FREE: "FREE" } as const;
 export type PostCategory = (typeof POST_CATEGORY)[keyof typeof POST_CATEGORY];
 
+/** 게시글 카테고리 표시 라벨 (단일 출처) */
+export const POST_CATEGORY_LABEL: Record<PostCategory, string> = {
+  [POST_CATEGORY.NOTICE]: "공지",
+  [POST_CATEGORY.FREE]: "자유",
+};
+
 /** 임대 상태 */
 export const LEASE_STATUS = { ACTIVE: "ACTIVE", ENDED: "ENDED" } as const;
 export type LeaseStatus = (typeof LEASE_STATUS)[keyof typeof LEASE_STATUS];

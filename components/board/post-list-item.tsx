@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Chip } from "@/components/ui/chip";
-import { PAGE_ROUTES, POST_CATEGORY, type PostCategory } from "@/lib/constants";
+import { PAGE_ROUTES, POST_CATEGORY, POST_CATEGORY_LABEL, type PostCategory } from "@/lib/constants";
 
 type Props = {
   id: string;
@@ -12,7 +12,7 @@ type Props = {
 
 export function PostListItem({ id, category, title, createdAt, buildingId }: Props) {
   const tone = category === POST_CATEGORY.NOTICE ? "warning" : "neutral";
-  const label = category === POST_CATEGORY.NOTICE ? "공지" : "자유";
+  const label = POST_CATEGORY_LABEL[category];
   const dateStr = createdAt ? new Date(createdAt).toLocaleDateString("ko-KR") : "";
 
   return (

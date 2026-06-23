@@ -34,5 +34,6 @@ export const MESSAGES = {
   },
   comment: {
     createFailed: "댓글 작성에 실패했어요. 잠시 후 다시 시도해주세요.",
+    empty: "아직 댓글이 없어요.",
   },
 } as const;

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { postSchema, type PostInput } from "@/lib/schemas";
 import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { API_ROUTES, POST_CATEGORY } from "@/lib/constants";
+import { API_ROUTES, POST_CATEGORY, POST_CATEGORY_LABEL } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
 export function PostForm({ buildingId }: { buildingId: string }) {
@@ -46,8 +46,8 @@ export function PostForm({ buildingId }: { buildingId: string }) {
           {...register("category")}
           className="h-[50px] w-full rounded-[14px] border border-border bg-surface px-4 text-[15px] text-text outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50"
         >
-          <option value={POST_CATEGORY.FREE}>자유</option>
-          <option value={POST_CATEGORY.NOTICE}>공지</option>
+          <option value={POST_CATEGORY.FREE}>{POST_CATEGORY_LABEL[POST_CATEGORY.FREE]}</option>
+          <option value={POST_CATEGORY.NOTICE}>{POST_CATEGORY_LABEL[POST_CATEGORY.NOTICE]}</option>
         </select>
         {errors.category && <span className="mt-1 block text-[13px] text-danger">{errors.category.message}</span>}
       </label>

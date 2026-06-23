@@ -7,7 +7,7 @@ import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListRow } from "@/components/ui/list-row";
 import { CommentForm } from "@/components/board/comment-form";
-import { PAGE_ROUTES, POST_CATEGORY } from "@/lib/constants";
+import { PAGE_ROUTES, POST_CATEGORY, POST_CATEGORY_LABEL } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
 export default async function BoardPostPage({
@@ -32,7 +32,7 @@ export default async function BoardPostPage({
   }
 
   const tone = post.category === POST_CATEGORY.NOTICE ? "warning" : "neutral";
-  const label = post.category === POST_CATEGORY.NOTICE ? "공지" : "자유";
+  const label = POST_CATEGORY_LABEL[post.category];
   const dateStr = post.createdAt ? new Date(post.createdAt).toLocaleDateString("ko-KR") : "";
 
   return (
@@ -49,7 +49,7 @@ export default async function BoardPostPage({
       <section className="mt-6">
         <h2 className="mb-3 text-[16px] font-bold text-text">댓글 {post.comments.length}개</h2>
         {post.comments.length === 0 ? (
-          <EmptyState text="아직 댓글이 없어요" />
+          <EmptyState text={MESSAGES.comment.empty} />
         ) : (
           <Card className="p-0">
             <div className="divide-y divide-border px-4">
