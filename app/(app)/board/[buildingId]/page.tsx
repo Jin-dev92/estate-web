@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
 import { backendListPosts, type Post } from "@/lib/api";
-import { AppShell } from "@/components/ui/app-shell";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PostListItem } from "@/components/board/post-list-item";
@@ -27,7 +26,7 @@ export default async function BoardListPage({
   }
 
   return (
-    <AppShell unread={0} userInitial="">
+    <>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">건물 게시판</h1>
       <PostForm buildingId={buildingId} />
       <Card className="p-0">
@@ -48,6 +47,6 @@ export default async function BoardListPage({
           </div>
         )}
       </Card>
-    </AppShell>
+    </>
   );
 }

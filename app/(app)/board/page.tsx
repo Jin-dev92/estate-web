@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getToken } from "@/lib/session";
 import { backendMe, backendMyLeases, backendMyBuildings, type Lease, type Building } from "@/lib/api";
-import { AppShell } from "@/components/ui/app-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
 import { ListRow } from "@/components/ui/list-row";
@@ -32,9 +31,9 @@ export default async function BoardEntryPage() {
       redirect(PAGE_ROUTES.board(active.buildingId));
     }
     return (
-      <AppShell unread={0} userInitial={me.email.charAt(0).toUpperCase()}>
+      <>
         <EmptyState text={MESSAGES.board.noBuildingTenant} />
-      </AppShell>
+      </>
     );
   }
 
@@ -48,9 +47,9 @@ export default async function BoardEntryPage() {
 
   if (buildings.length === 0) {
     return (
-      <AppShell unread={0} userInitial={me.email.charAt(0).toUpperCase()}>
+      <>
         <EmptyState text={MESSAGES.board.noBuildingOwner} />
-      </AppShell>
+      </>
     );
   }
 
@@ -59,7 +58,7 @@ export default async function BoardEntryPage() {
   }
 
   return (
-    <AppShell unread={0} userInitial={me.email.charAt(0).toUpperCase()}>
+    <>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">건물 선택</h1>
       <Card className="p-0">
         <div className="divide-y divide-border px-4">
@@ -70,6 +69,6 @@ export default async function BoardEntryPage() {
           ))}
         </div>
       </Card>
-    </AppShell>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
 import { backendGetPost, backendMe } from "@/lib/api";
-import { AppShell } from "@/components/ui/app-shell";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,9 +25,9 @@ export default async function BoardPostPage({
     post = await backendGetPost(token, postId);
   } catch {
     return (
-      <AppShell unread={0} userInitial="">
+      <>
         <EmptyState text={MESSAGES.board.postNotFound} />
-      </AppShell>
+      </>
     );
   }
 
@@ -42,7 +41,7 @@ export default async function BoardPostPage({
   const dateStr = post.createdAt ? new Date(post.createdAt).toLocaleDateString("ko-KR") : "";
 
   return (
-    <AppShell unread={0} userInitial="">
+    <>
       <Card>
         <div className="mb-2 flex items-center gap-2">
           <Chip tone={tone}>{label}</Chip>
@@ -75,6 +74,6 @@ export default async function BoardPostPage({
         )}
         <CommentForm postId={postId} />
       </section>
-    </AppShell>
+    </>
   );
 }

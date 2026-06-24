@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
 import { backendBuildingUnits } from "@/lib/api";
 import { PAGE_ROUTES } from "@/lib/constants";
-import { AppShell } from "@/components/ui/app-shell";
 import { Card } from "@/components/ui/card";
 import { ListRow } from "@/components/ui/list-row";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,7 +25,7 @@ export default async function BuildingDetailPage({
   }
 
   return (
-    <AppShell unread={0} userInitial="">
+    <>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">호실 관리</h1>
       <UnitForm buildingId={id} />
       <Card className="p-0">
@@ -43,6 +42,6 @@ export default async function BuildingDetailPage({
           </div>
         )}
       </Card>
-    </AppShell>
+    </>
   );
 }

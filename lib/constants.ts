@@ -16,6 +16,8 @@ export const API_ROUTES = {
   buildingPosts: (id: string) => `/api/buildings/${id}/posts`,
   postComments: (id: string) => `/api/posts/${id}/comments`,
   chatRooms: "/api/chat/rooms",
+  notificationsRead: "/api/notifications/read",
+  notificationRead: (id: string) => `/api/notifications/${id}/read`,
 } as const;
 
 /** 앱 페이지 경로(네비게이션 단일 출처) */
@@ -47,3 +49,11 @@ export const POST_CATEGORY_LABEL: Record<PostCategory, string> = {
 /** 임대 상태 */
 export const LEASE_STATUS = { ACTIVE: "ACTIVE", ENDED: "ENDED" } as const;
 export type LeaseStatus = (typeof LEASE_STATUS)[keyof typeof LEASE_STATUS];
+
+/** 알림 종류 (백엔드 NotificationType 동기화) */
+export const NOTIFICATION_TYPE = {
+  MessageReceived: "MessageReceived",
+  CommentAdded: "CommentAdded",
+  PostAdded: "PostAdded",
+} as const;
+export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
