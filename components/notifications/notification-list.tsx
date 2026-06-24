@@ -28,7 +28,15 @@ export function NotificationList({ initial }: { initial: Notification[] }) {
     if (wasUnread) {
       setReadIds((prev) => new Set(prev).add(n.id));
       const res = await fetch(API_ROUTES.notificationRead(n.id), { method: "PATCH" });
-      if (res.ok) decrement();
+      if (res.ok) {
+        decrement();
+      } else {
+        setReadIds((prev) => {
+          const next = new Set(prev);
+          next.delete(n.id);
+          return next;
+        });
+      }
     }
     router.push(notificationHref(n));
   }
