@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
 import { backendMe, backendRoomMessages, type ChatMessage } from "@/lib/api";
 import { toAscending } from "@/lib/chat/room-label";
-import { AppShell } from "@/components/ui/app-shell";
 import { ChatConversation } from "@/components/chat/chat-conversation";
 import { PAGE_ROUTES } from "@/lib/constants";
 
@@ -31,8 +30,8 @@ export default async function ChatRoomPage({
   }
 
   return (
-    <AppShell unread={0} userInitial={me.email.charAt(0).toUpperCase()}>
+    <>
       <ChatConversation token={token} roomId={roomId} myId={me.id} initial={toAscending(history)} />
-    </AppShell>
+    </>
   );
 }

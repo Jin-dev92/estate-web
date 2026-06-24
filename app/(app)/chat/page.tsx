@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getToken } from "@/lib/session";
 import { backendMe, backendMyRooms, backendMyBuildings, backendMyLeases, type ChatRoom } from "@/lib/api";
 import { chatRoomLabel } from "@/lib/chat/room-label";
-import { AppShell } from "@/components/ui/app-shell";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListRow } from "@/components/ui/list-row";
@@ -46,10 +45,8 @@ export default async function ChatListPage() {
     } catch {}
   }
 
-  const initial = me.email.charAt(0).toUpperCase();
-
   return (
-    <AppShell unread={0} userInitial={initial}>
+    <>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">채팅</h1>
       {rooms.length === 0 ? (
         <>
@@ -73,6 +70,6 @@ export default async function ChatListPage() {
           </div>
         </Card>
       )}
-    </AppShell>
+    </>
   );
 }
