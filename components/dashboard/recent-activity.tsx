@@ -3,9 +3,6 @@ import { ListRow } from "@/components/ui/list-row";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Notification } from "@/lib/api";
 
-const LABEL: Record<string, string> = {
-  MessageSent: "새 메시지", PostCreated: "새 게시글", CommentCreated: "새 댓글", TenantJoined: "새 입주",
-};
 export function RecentActivity({ items }: { items: Notification[] }) {
   return (
     <section className="mt-6">
@@ -14,8 +11,8 @@ export function RecentActivity({ items }: { items: Notification[] }) {
         {items.length === 0 ? <EmptyState text="아직 새 소식이 없어요." /> :
           <div className="divide-y divide-border px-4">
             {items.map((n) => (
-              <ListRow key={n.id} title={LABEL[n.type] ?? n.type}
-                desc={typeof n.payload?.preview === "string" ? n.payload.preview : undefined}
+              <ListRow key={n.id} title={n.title}
+                desc={n.body ?? undefined}
                 meta={n.readAt ? undefined : "NEW"} />
             ))}
           </div>}
