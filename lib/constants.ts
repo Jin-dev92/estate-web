@@ -5,6 +5,13 @@ export const SESSION_COOKIE = "session";
 export const ROLE = { OWNER: "OWNER", TENANT: "TENANT" } as const;
 export type SignupRole = (typeof ROLE)[keyof typeof ROLE];
 
+/** 역할 표시 라벨(단일 출처) */
+export const ROLE_LABEL: Record<string, string> = {
+  OWNER: "건물주",
+  TENANT: "입주자",
+  ADMIN: "관리자",
+};
+
 /** 내부(Next) API 라우트 경로 */
 export const API_ROUTES = {
   session: "/api/session",
@@ -18,6 +25,8 @@ export const API_ROUTES = {
   chatRooms: "/api/chat/rooms",
   notificationsRead: "/api/notifications/read",
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
+  profile: "/api/profile",
+  profilePassword: "/api/profile/password",
 } as const;
 
 /** 앱 페이지 경로(네비게이션 단일 출처) */
@@ -34,6 +43,7 @@ export const PAGE_ROUTES = {
   buildingDetail: (id: string) => `/buildings/${id}`,
   inviteCodes: "/invite-codes",
   notifications: "/notifications",
+  settings: "/settings",
 } as const;
 
 /** 게시글 카테고리 (백엔드 enum 동기화) */

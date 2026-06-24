@@ -41,3 +41,14 @@ export type PostInput = z.infer<typeof postSchema>;
 
 export const commentSchema = z.object({ content: z.string().min(1, MESSAGES.form.invalidInput) });
 export type CommentInput = z.infer<typeof commentSchema>;
+
+export const profileSchema = z.object({
+  name: z.string().min(1, MESSAGES.form.invalidInput),
+});
+export type ProfileInput = z.infer<typeof profileSchema>;
+
+export const passwordSchema = z.object({
+  currentPassword: z.string().min(1, MESSAGES.form.invalidInput),
+  newPassword: z.string().min(8, MESSAGES.settings.newPassword),
+});
+export type PasswordInput = z.infer<typeof passwordSchema>;
