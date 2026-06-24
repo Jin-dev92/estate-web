@@ -36,6 +36,11 @@ export const MESSAGES = {
     createFailed: "댓글 작성에 실패했어요. 잠시 후 다시 시도해주세요.",
     empty: "아직 댓글이 없어요.",
   },
+  notification: {
+    empty: "아직 알림이 없어요.",
+    markAll: "모두 읽음",
+    markFailed: "처리하지 못했어요. 잠시 후 다시 시도해주세요.",
+  },
   chat: {
     empty: "진행 중인 대화가 없어요.",
     connectFailed: "실시간 연결에 실패했어요. 잠시 후 다시 시도해주세요.",
