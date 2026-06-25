@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getToken } from "@/lib/session";
 import { backendMe, backendUnreadCount } from "@/lib/api";
 import { PAGE_ROUTES } from "@/lib/constants";
+import { MESSAGES } from "@/lib/messages";
 import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { NotificationBell } from "@/components/ui/notification-bell";
 
@@ -34,7 +35,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             <div className="flex-1" />
             <NotificationBell />
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-[14px] font-bold text-white">{initial}</div>
+            <Link href={PAGE_ROUTES.settings} className="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-[14px] font-bold text-white" aria-label={MESSAGES.settings.title}>
+              {initial}
+            </Link>
           </div>
         </header>
         <main className="mx-auto max-w-[760px] px-5 pb-16 pt-6">{children}</main>

@@ -16,3 +16,21 @@ export const backendLogin = (email: string, password: string) =>
     { 401: MESSAGES.auth.invalidCredentials });
 
 export const backendMe = (t: string) => authGet<Me>("/auth/me", t);
+
+export type Profile = { id: string; email: string; name: string; role: "OWNER" | "TENANT" | "ADMIN" };
+
+export const backendProfile = (t: string) => authGet<Profile>("/auth/profile", t);
+
+export const backendUpdateProfile = (t: string, body: { name: string }) =>
+  call<Profile>("/auth/profile", {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${t}` },
+    body: JSON.stringify(body),
+  }, {});
+
+export const backendChangePassword = (t: string, body: { currentPassword: string; newPassword: string }) =>
+  call<{ ok: true }>("/auth/password", {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${t}` },
+    body: JSON.stringify(body),
+  }, { 401: MESSAGES.settings.wrongCurrentPassword });
