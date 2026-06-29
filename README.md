@@ -36,11 +36,13 @@
 
 ## 시작하기
 
+> 패키지 매니저는 **pnpm**입니다(`packageManager` 필드로 버전 고정 — `corepack enable`로 자동 사용).
+
 ```bash
-npm install
-npm run dev      # http://localhost:3000 (개발 서버)
-npm run build    # 프로덕션 빌드
-npm run lint     # ESLint
+pnpm install
+pnpm dev         # http://localhost:3000 (개발 서버)
+pnpm build       # 프로덕션 빌드
+pnpm lint        # ESLint
 ```
 
 ## 서브모듈로 클론하기
