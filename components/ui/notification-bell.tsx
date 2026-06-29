@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { PAGE_ROUTES } from "@/lib/constants";
-import { useNotifications } from "@/components/notifications/notification-provider";
+import { useUnreadCountQuery } from "@/lib/query/notifications";
 
-export function NotificationBell() {
-  const { unread } = useNotifications();
+export function NotificationBell({ initialUnread }: { initialUnread: number }) {
+  const { data: unread = 0 } = useUnreadCountQuery(initialUnread);
   return (
     <Link
       href={PAGE_ROUTES.notifications}

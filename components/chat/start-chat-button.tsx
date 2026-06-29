@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { API_ROUTES, PAGE_ROUTES } from "@/lib/constants";
+import { PAGE_ROUTES } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
+import { useEnsureRoom } from "@/lib/query/mutations/chat";
 
 export function StartChatButton({
   buildingId,
@@ -16,33 +16,21 @@ export function StartChatButton({
   label: string;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { mutate, isPending, error } = useEnsureRoom();
 
-  async function start() {
-    setLoading(true);
-    setError(null);
-    const res = await fetch(API_ROUTES.chatRooms, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ buildingId, tenantId }),
-    });
-    if (res.ok) {
-      const room = await res.json();
-      router.push(PAGE_ROUTES.chatRoom(room.id));
-    } else {
-      const json = await res.json().catch(() => ({}));
-      setError(json.message ?? MESSAGES.chat.startFailed);
-      setLoading(false);
-    }
+  function start() {
+    mutate(
+      { buildingId, tenantId },
+      { onSuccess: (room) => router.push(PAGE_ROUTES.chatRoom(room.id)) },
+    );
   }
 
   return (
     <div className="mt-4">
-      <Button onClick={start} disabled={loading}>
-        {loading ? MESSAGES.chat.starting : label}
+      <Button onClick={start} disabled={isPending}>
+        {isPending ? MESSAGES.chat.starting : label}
       </Button>
-      {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-danger">{error.message}</p>}
     </div>
   );
 }

@@ -1,37 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Notification } from "@/lib/api";
 import { API_ROUTES } from "@/lib/constants";
+import { qk } from "@/lib/query/keys";
 import { MESSAGES } from "@/lib/messages";
-import { useNotifications } from "@/components/notifications/notification-provider";
 
 export function MarkAllReadButton() {
-  const router = useRouter();
-  const { reset } = useNotifications();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function markAll() {
-    setLoading(true);
-    setError(null);
-    const res = await fetch(API_ROUTES.notificationsRead, { method: "PATCH" });
-    if (res.ok) {
-      reset();
-      router.refresh();
-    } else {
-      const json = await res.json().catch(() => ({}));
-      setError(json.message ?? MESSAGES.notification.markFailed);
-    }
-    setLoading(false);
-  }
+  const queryClient = useQueryClient();
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(API_ROUTES.notificationsRead, { method: "PATCH" });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.message ?? MESSAGES.notification.markFailed);
+      }
+    },
+    onSuccess: () => {
+      const now = new Date().toISOString();
+      queryClient.setQueryData<Notification[]>(qk.notifications.list(), (prev = []) =>
+        prev.map((n) => (n.readAt ? n : { ...n, readAt: now })),
+      );
+      queryClient.setQueryData<number>(qk.notifications.unreadCount(), 0);
+    },
+  });
 
   return (
     <div className="text-right">
-      <button onClick={markAll} disabled={loading} className="text-[13px] font-semibold text-brand-600 disabled:opacity-50">
+      <button onClick={() => mutate()} disabled={isPending} className="text-[13px] font-semibold text-brand-600 disabled:opacity-50">
         {MESSAGES.notification.markAll}
       </button>
-      {error && <p className="mt-1 text-[13px] text-danger">{error}</p>}
+      {error && <p className="mt-1 text-[13px] text-danger">{error.message}</p>}
     </div>
   );
 }

@@ -2,36 +2,21 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { API_ROUTES } from "@/lib/constants";
-import { MESSAGES } from "@/lib/messages";
+import { useIssueInviteCode } from "@/lib/query/mutations/invite";
 
 export function InviteCodeCard({ unitId }: { unitId: string }) {
   const [code, setCode] = useState<string | null>(null);
   const [expiresInSec, setExpiresInSec] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const { mutate, isPending, error } = useIssueInviteCode(unitId);
 
-  async function issue() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(API_ROUTES.unitInviteCodes(unitId), {
-        method: "POST",
-      });
-      if (res.ok) {
-        const data = await res.json();
+  function issue() {
+    mutate(undefined, {
+      onSuccess: (data) => {
         setCode(data.code);
         setExpiresInSec(data.expiresInSec);
-      } else {
-        const json = await res.json();
-        setError(json.message ?? MESSAGES.invite.issueFailed);
-      }
-    } catch {
-      setError(MESSAGES.invite.issueFailed);
-    } finally {
-      setLoading(false);
-    }
+      },
+    });
   }
 
   async function copyCode() {
@@ -56,12 +41,8 @@ export function InviteCodeCard({ unitId }: { unitId: string }) {
   return (
     <div className="flex flex-col gap-2 py-2">
       {!code ? (
-        <Button
-          variant="secondary"
-          onClick={issue}
-          disabled={loading}
-        >
-          {loading ? "발급 중…" : "초대코드 발급"}
+        <Button variant="secondary" onClick={issue} disabled={isPending}>
+          {isPending ? "발급 중…" : "초대코드 발급"}
         </Button>
       ) : (
         <div className="flex flex-col gap-2">
@@ -83,7 +64,7 @@ export function InviteCodeCard({ unitId }: { unitId: string }) {
           </div>
         </div>
       )}
-      {error && <p className="text-center text-[13px] text-danger">{error}</p>}
+      {error && <p className="text-center text-[13px] text-danger">{error.message}</p>}
     </div>
   );
 }

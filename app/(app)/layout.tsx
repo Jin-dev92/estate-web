@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!token) redirect(PAGE_ROUTES.login);
 
   let initial = "";
-  let unread = 0;
+  let initialUnread = 0;
   try {
     const me = await backendMe(token);
     initial = me.email.charAt(0).toUpperCase();
@@ -20,13 +20,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect(PAGE_ROUTES.login);
   }
   try {
-    unread = (await backendUnreadCount(token)).count;
+    initialUnread = (await backendUnreadCount(token)).count;
   } catch {
-    unread = 0;
+    initialUnread = 0;
   }
 
   return (
-    <NotificationProvider token={token} initialUnread={unread}>
+    <NotificationProvider token={token}>
       <div className="min-h-full">
         <header className="sticky top-0 z-20 border-b border-border bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] backdrop-blur">
           <div className="mx-auto flex max-w-[760px] items-center gap-3 px-5 py-3.5">
@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-brand-500 text-white">터</span>터전
             </Link>
             <div className="flex-1" />
-            <NotificationBell />
+            <NotificationBell initialUnread={initialUnread} />
             <Link href={PAGE_ROUTES.settings} className="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-[14px] font-bold text-white" aria-label={MESSAGES.settings.title}>
               {initial}
             </Link>
