@@ -10,6 +10,10 @@ beforeEach(() => {
   push.mockReset();
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 it("성공 시 생성된 방으로 이동한다", async () => {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ id: "r9" }), { status: 201 })));
   renderWithClient(<StartChatButton buildingId="b1" tenantId="t1" label="문의하기" />);
