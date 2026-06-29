@@ -1,36 +1,21 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { io, type Socket } from "socket.io-client";
 import type { Notification } from "@/lib/api";
 import { WS_URL } from "@/lib/chat/ws";
+import { qk } from "@/lib/query/keys";
 
-type Ctx = {
-  unread: number;
-  liveItems: Notification[];
-  decrement: () => void;
-  reset: () => void;
-};
-
-const NotificationContext = createContext<Ctx | null>(null);
-
-export function useNotifications(): Ctx {
-  const ctx = useContext(NotificationContext);
-  if (!ctx) throw new Error("useNotifications must be used within NotificationProvider");
-  return ctx;
-}
-
+// 소켓 수신 알림을 react-query 캐시(list/unreadCount)에 직접 쓴다. 별도 context state 없음.
 export function NotificationProvider({
   token,
-  initialUnread,
   children,
 }: {
   token: string;
-  initialUnread: number;
   children: React.ReactNode;
 }) {
-  const [unread, setUnread] = useState(initialUnread);
-  const [liveItems, setLiveItems] = useState<Notification[]>([]);
+  const queryClient = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -40,21 +25,16 @@ export function NotificationProvider({
     });
     socketRef.current = socket;
     socket.on("notification", (n: Notification) => {
-      setUnread((u) => u + 1);
-      setLiveItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
+      queryClient.setQueryData<Notification[]>(qk.notifications.list(), (prev = []) =>
+        prev.some((x) => x.id === n.id) ? prev : [n, ...prev],
+      );
+      queryClient.setQueryData<number>(qk.notifications.unreadCount(), (c = 0) => c + 1);
     });
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token]);
+  }, [token, queryClient]);
 
-  const decrement = () => setUnread((u) => Math.max(0, u - 1));
-  const reset = () => setUnread(0);
-
-  return (
-    <NotificationContext.Provider value={{ unread, liveItems, decrement, reset }}>
-      {children}
-    </NotificationContext.Provider>
-  );
+  return <>{children}</>;
 }

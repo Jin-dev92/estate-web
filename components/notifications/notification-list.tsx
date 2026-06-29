@@ -1,53 +1,47 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Notification } from "@/lib/api";
 import { API_ROUTES } from "@/lib/constants";
+import { qk } from "@/lib/query/keys";
 import { notificationHref } from "@/lib/notifications/notification-link";
-import { useNotifications } from "@/components/notifications/notification-provider";
+import { useNotificationsQuery } from "@/lib/query/notifications";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MESSAGES } from "@/lib/messages";
 
 export function NotificationList({ initial }: { initial: Notification[] }) {
   const router = useRouter();
-  const { liveItems, decrement } = useNotifications();
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
+  const { data: items = [] } = useNotificationsQuery(initial);
 
-  // 실시간 수신분(미읽음)을 상단에 합치고 id 중복 제거.
-  const seen = new Set<string>();
-  const merged = [...liveItems, ...initial].filter((n) => {
-    if (seen.has(n.id)) return false;
-    seen.add(n.id);
-    return true;
+  const markOne = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(API_ROUTES.notificationRead(id), { method: "PATCH" });
+      if (!res.ok) throw new Error(MESSAGES.notification.markFailed);
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.setQueryData<Notification[]>(qk.notifications.list(), (prev = []) =>
+        prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)),
+      );
+      queryClient.setQueryData<number>(qk.notifications.unreadCount(), (c = 0) => Math.max(0, c - 1));
+    },
   });
 
-  async function open(n: Notification) {
-    const wasUnread = !n.readAt && !readIds.has(n.id);
-    if (wasUnread) {
-      setReadIds((prev) => new Set(prev).add(n.id));
-      const res = await fetch(API_ROUTES.notificationRead(n.id), { method: "PATCH" });
-      if (res.ok) {
-        decrement();
-      } else {
-        setReadIds((prev) => {
-          const next = new Set(prev);
-          next.delete(n.id);
-          return next;
-        });
-      }
-    }
+  function open(n: Notification) {
+    if (!n.readAt) markOne.mutate(n.id);
     router.push(notificationHref(n));
   }
 
-  if (merged.length === 0) return <EmptyState text={MESSAGES.notification.empty} />;
+  if (items.length === 0) return <EmptyState text={MESSAGES.notification.empty} />;
 
   return (
     <Card className="p-0">
       <div className="divide-y divide-border px-4">
-        {merged.map((n) => {
-          const unread = !n.readAt && !readIds.has(n.id);
+        {items.map((n) => {
+          const unread = !n.readAt;
           return (
             <button key={n.id} onClick={() => open(n)} className="flex w-full items-start gap-3 py-3.5 text-left hover:bg-surface-2">
               <div className="min-w-0 flex-1">
