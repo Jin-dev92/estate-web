@@ -36,6 +36,8 @@ function KakaoCallbackInner() {
         }
         if (json.next === KAKAO_NEXT.DASHBOARD) {
           router.replace(PAGE_ROUTES.dashboard);
+        } else if (!json.onboardingToken) {
+          setError(MESSAGES.auth.kakaoFailed);
         } else {
           sessionStorage.setItem(KAKAO_ONBOARDING_KEY, json.onboardingToken);
           router.replace(PAGE_ROUTES.roleSelect);
