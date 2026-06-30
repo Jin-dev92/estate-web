@@ -1,4 +1,4 @@
-import { authGet, call } from "./client";
+import { authGet, authPatch } from "./client";
 import type { NotificationType } from "../constants";
 
 export type Notification = {
@@ -20,13 +20,7 @@ export const backendUnreadCount = (t: string) =>
   authGet<{ count: number }>("/notifications/unread-count", t);
 
 export const backendMarkAllRead = (t: string) =>
-  call<{ ok: true }>("/notifications/read", {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${t}` },
-  }, {});
+  authPatch<{ ok: true }>("/notifications/read", t);
 
 export const backendMarkOneRead = (t: string, id: string) =>
-  call<{ ok: true }>(`/notifications/${id}/read`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${t}` },
-  }, {});
+  authPatch<{ ok: true }>(`/notifications/${id}/read`, t);

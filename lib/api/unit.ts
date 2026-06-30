@@ -1,9 +1,5 @@
-import { call } from "./client";
+import { authPost } from "./client";
 import type { Unit } from "./building";
 
 export const backendCreateUnit = (t: string, buildingId: string, body: { name: string; floor: number }) =>
-  call<Unit>(`/buildings/${buildingId}/units`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${t}` },
-    body: JSON.stringify(body),
-  }, {});
+  authPost<Unit>(`/buildings/${buildingId}/units`, t, body);
