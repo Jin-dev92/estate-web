@@ -26,8 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PAT 가드
+        env:
+          TOKEN: ${{ secrets.SUBMODULE_BUMP_TOKEN }}
         run: |
-          if [ -z "${{ secrets.SUBMODULE_BUMP_TOKEN }}" ]; then
+          if [ -z "$TOKEN" ]; then
             echo "::error::SUBMODULE_BUMP_TOKEN 미설정 — estate-server docs/ci/submodule-pointer-bump.md 참조해 PAT를 등록하세요."
             exit 1
           fi
@@ -59,9 +61,8 @@ jobs:
           fi
 
           # gitlink를 새 SHA로 직접 설정(서브모듈 내용 fetch 불필요).
-          git update-index --add --cacheinfo 160000,"$NEW_SHA",web
-
           git checkout -B "$BRANCH"
+          git update-index --add --cacheinfo 160000,"$NEW_SHA",web
           git commit -m "[infra]chore: web 서브모듈 포인터 갱신 (→ ${SHORT}) [auto]"
           git push --force-with-lease origin "$BRANCH"
 
