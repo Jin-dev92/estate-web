@@ -1,4 +1,4 @@
-import { call, authGet } from "./client";
+import { authGet, authPost } from "./client";
 import type { PostCategory } from "../constants";
 
 export type Post = {
@@ -28,24 +28,7 @@ export const backendCreatePost = (
   t: string,
   buildingId: string,
   body: { category?: PostCategory; title: string; content: string },
-) =>
-  call<Post>(
-    `/buildings/${buildingId}/posts`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${t}` },
-      body: JSON.stringify(body),
-    },
-    {},
-  );
+) => authPost<Post>(`/buildings/${buildingId}/posts`, t, body);
 
 export const backendCreateComment = (t: string, postId: string, content: string) =>
-  call<Comment>(
-    `/posts/${postId}/comments`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${t}` },
-      body: JSON.stringify({ content }),
-    },
-    {},
-  );
+  authPost<Comment>(`/posts/${postId}/comments`, t, { content });
