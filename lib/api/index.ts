@@ -7,3 +7,4 @@ export * from "./unit";
 export * from "./notification";
 export * from "./chat";
 export * from "./board";
+export * from "./kakao";

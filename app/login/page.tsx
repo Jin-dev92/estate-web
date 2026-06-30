@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { loginSchema, type LoginInput } from "@/lib/schemas";
-import { API_ROUTES } from "@/lib/constants";
+import { API_ROUTES, kakaoAuthorizeUrl, PAGE_ROUTES } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
 export default function LoginPage() {
@@ -20,6 +20,13 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
+
+  function loginWithKakao() {
+    const state = crypto.randomUUID();
+    sessionStorage.setItem("kakao_state", state);
+    const redirectUri = `${window.location.origin}${PAGE_ROUTES.kakaoCallback}`;
+    window.location.href = kakaoAuthorizeUrl(redirectUri, state);
+  }
 
   async function onValid(data: LoginInput) {
     setServerError("");
@@ -50,6 +57,13 @@ export default function LoginPage() {
           처음이신가요? <Link href="/signup" className="font-bold text-brand-600">회원가입</Link>
         </p>
       </form>
+      <button
+        type="button"
+        onClick={loginWithKakao}
+        className="mt-3 h-[50px] w-full rounded-[14px] bg-[#FEE500] font-bold text-[15px] text-[#191600] grid place-items-center"
+      >
+        {MESSAGES.auth.kakaoLogin}
+      </button>
     </main>
   );
 }

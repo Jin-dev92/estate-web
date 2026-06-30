@@ -27,6 +27,8 @@ export const API_ROUTES = {
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
   profile: "/api/profile",
   profilePassword: "/api/profile/password",
+  kakao: "/api/auth/kakao",
+  kakaoComplete: "/api/auth/kakao/complete",
 } as const;
 
 /** 앱 페이지 경로(네비게이션 단일 출처) */
@@ -44,6 +46,8 @@ export const PAGE_ROUTES = {
   inviteCodes: "/invite-codes",
   notifications: "/notifications",
   settings: "/settings",
+  kakaoCallback: "/auth/kakao/callback",
+  roleSelect: "/signup/role-select",
 } as const;
 
 /** 게시글 카테고리 (백엔드 enum 동기화) */
@@ -67,3 +71,16 @@ export const NOTIFICATION_TYPE = {
   PostAdded: "PostAdded",
 } as const;
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
+
+/** 카카오 OAuth authorize URL. client id는 공개 가능(redirect용). */
+export const KAKAO_CLIENT_ID = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? "";
+export function kakaoAuthorizeUrl(redirectUri: string, state: string): string {
+  const q = new URLSearchParams({
+    client_id: KAKAO_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "account_email",
+    state,
+  });
+  return `https://kauth.kakao.com/oauth/authorize?${q.toString()}`;
+}

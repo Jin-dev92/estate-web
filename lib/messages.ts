@@ -9,6 +9,9 @@ export const MESSAGES = {
     emailInUse: "이미 가입된 이메일입니다",
     loginFailed: "로그인하지 못했어요. 잠시 후 다시 시도해주세요.",
     signupFailed: "가입을 완료하지 못했어요. 잠시 후 다시 시도해주세요.",
+    kakaoLogin: "카카오로 로그인",
+    kakaoFailed: "카카오 로그인에 실패했어요. 잠시 후 다시 시도해주세요.",
+    kakaoEmailRequired: "카카오 이메일 제공 동의가 필요합니다.",
   },
   form: {
     invalidInput: "입력값을 확인해주세요",
