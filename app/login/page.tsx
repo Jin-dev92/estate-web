@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { loginSchema, type LoginInput } from "@/lib/schemas";
-import { API_ROUTES, kakaoAuthorizeUrl, PAGE_ROUTES } from "@/lib/constants";
+import { API_ROUTES, kakaoAuthorizeUrl, KAKAO_STATE_KEY, PAGE_ROUTES } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
 
 export default function LoginPage() {
@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   function loginWithKakao() {
     const state = crypto.randomUUID();
-    sessionStorage.setItem("kakao_state", state);
+    sessionStorage.setItem(KAKAO_STATE_KEY, state);
     const redirectUri = `${window.location.origin}${PAGE_ROUTES.kakaoCallback}`;
     window.location.href = kakaoAuthorizeUrl(redirectUri, state);
   }

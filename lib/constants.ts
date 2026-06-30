@@ -72,6 +72,14 @@ export const NOTIFICATION_TYPE = {
 } as const;
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
 
+/** 카카오 OAuth sessionStorage 키 (로그인↔콜백↔역할선택 공유) */
+export const KAKAO_STATE_KEY = "kakao_state";
+export const KAKAO_ONBOARDING_KEY = "kakao_onboarding";
+
+/** /api/auth/kakao 응답의 다음 단계 식별자 (Route Handler↔콜백 공유) */
+export const KAKAO_NEXT = { DASHBOARD: "dashboard", ROLE_SELECT: "role-select" } as const;
+export type KakaoNext = (typeof KAKAO_NEXT)[keyof typeof KAKAO_NEXT];
+
 /** 카카오 OAuth authorize URL. client id는 공개 가능(redirect용). */
 export const KAKAO_CLIENT_ID = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? "";
 export function kakaoAuthorizeUrl(redirectUri: string, state: string): string {
