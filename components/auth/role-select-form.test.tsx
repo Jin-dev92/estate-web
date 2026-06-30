@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { KAKAO_ONBOARDING_KEY } from "@/lib/constants";
 
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
@@ -8,7 +9,7 @@ import { RoleSelectForm } from "@/components/auth/role-select-form";
 
 beforeEach(() => {
   replace.mockReset();
-  sessionStorage.setItem("kakao_onboarding", "tok");
+  sessionStorage.setItem(KAKAO_ONBOARDING_KEY, "tok");
 });
 afterEach(() => vi.unstubAllGlobals());
 
