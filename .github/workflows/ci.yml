@@ -1,0 +1,36 @@
+# =============================================================================
+# estate-web PR 가드 — lint·test(Vitest)·build를 PR에서 자동 실행.
+# (배포·E2E·커버리지는 범위 밖. 단순 머지 전 검증.)
+# Node 버전은 .nvmrc(=24, estate-server와 동일) 단일 출처.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# 같은 PR에서 이전 실행이 돌고 있으면 취소
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: checks (lint·test·build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Unit tests
+        run: pnpm test
+      - name: Build
+        run: pnpm build
