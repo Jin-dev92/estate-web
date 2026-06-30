@@ -1,0 +1,83 @@
+# =============================================================================
+# estate-web main 머지 → estate-server의 web 서브모듈 포인터를 갱신하는 PR 자동 생성.
+#
+# 기존 수동 흐름([infra]chore: web 서브모듈 포인터 갱신 PR)을 자동화한다.
+# estate-server main은 직접 push 금지이므로 PR만 만들고, 머지는 사람이 한다.
+#
+# 선행(레포 1회 설정): estate-server docs/ci/submodule-pointer-bump.md 참조
+#   - Fine-grained PAT(estate-server: Contents RW + Pull requests RW)를
+#     이 레포 Secret SUBMODULE_BUMP_TOKEN 으로 등록.
+# =============================================================================
+
+name: Bump web submodule pointer
+
+on:
+  push:
+    branches: [main]
+
+# 빠른 연속 머지 시 마지막 실행만 유효(롤링 브랜치에 최신 SHA 반영)
+concurrency:
+  group: bump-web-submodule
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    name: Open submodule-bump PR on estate-server
+    runs-on: ubuntu-latest
+    steps:
+      - name: PAT 가드
+        env:
+          TOKEN: ${{ secrets.SUBMODULE_BUMP_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::SUBMODULE_BUMP_TOKEN 미설정 — estate-server docs/ci/submodule-pointer-bump.md 참조해 PAT를 등록하세요."
+            exit 1
+          fi
+
+      - name: estate-server 체크아웃(PAT)
+        uses: actions/checkout@v5
+        with:
+          repository: Jin-dev92/estate-server-kafka
+          token: ${{ secrets.SUBMODULE_BUMP_TOKEN }}
+          ref: main
+          fetch-depth: 0
+
+      - name: web 포인터 갱신 + PR 생성
+        env:
+          GH_TOKEN: ${{ secrets.SUBMODULE_BUMP_TOKEN }}
+          NEW_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SHORT="${NEW_SHA:0:7}"
+          BRANCH="chore/auto-bump-web-submodule"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 현재 web gitlink가 이미 같은 SHA면 스킵(idempotent)
+          CURRENT=$(git ls-tree HEAD web | awk '{print $3}')
+          if [ "$CURRENT" = "$NEW_SHA" ]; then
+            echo "포인터 동일($SHORT) — 변경 없음, 스킵."
+            exit 0
+          fi
+
+          # gitlink를 새 SHA로 직접 설정(서브모듈 내용 fetch 불필요).
+          git checkout -B "$BRANCH"
+          git update-index --add --cacheinfo 160000,"$NEW_SHA",web
+          git commit -m "[infra]chore: web 서브모듈 포인터 갱신 (→ ${SHORT}) [auto]"
+          git push --force-with-lease origin "$BRANCH"
+
+          BODY="estate-web main 머지(\`${SHORT}\`)에 맞춰 web 서브모듈 포인터를 자동 갱신합니다.
+
+          - estate-web 커밋: https://github.com/Jin-dev92/estate-web/commit/${NEW_SHA}
+          - 자동 생성(workflow: bump-submodule-pointer). estate-server CI 통과 후 사람이 머지합니다.
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+
+          # 열린 PR이 있으면 본문 갱신, 없으면 생성(idempotent)
+          if gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --title "[infra]chore: web 서브모듈 포인터 갱신 (→ ${SHORT})" --body "$BODY"
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "[infra]chore: web 서브모듈 포인터 갱신 (→ ${SHORT})" \
+              --body "$BODY"
+          fi
