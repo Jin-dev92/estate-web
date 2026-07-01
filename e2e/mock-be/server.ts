@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
-import { E2E_CREDENTIALS } from "../fixtures/e2e-constants";
+import { ROLE } from "../../lib/constants";
+import { E2E_CREDENTIALS, E2E_SESSION_TOKEN } from "../fixtures/e2e-constants";
 
 const PORT = 3099;
 
@@ -28,7 +29,7 @@ const server = createServer(async (req, res) => {
   const method = req.method ?? "GET";
 
   // readiness 체크
-  if (url === "/health") return send(res, 200, { ok: true });
+  if (url === "/health" && method === "GET") return send(res, 200, { ok: true });
 
   // 로그인: failEmail 이면 401, 그 외엔 토큰 발급(무상태 분기).
   if (url === "/auth/login" && method === "POST") {
@@ -41,20 +42,29 @@ const server = createServer(async (req, res) => {
         message: "이메일 또는 비밀번호가 올바르지 않습니다.",
       });
     }
-    return send(res, 201, { accessToken: "e2e-token" });
+    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
   }
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
   if (url === "/auth/me" && method === "GET") {
-    return send(res, 200, { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: "TENANT" });
+    return send(res, 200, { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: ROLE.TENANT });
   }
 
-  // 대시보드 SSR이 부르는 읽기 — 안전 기본값.
-  if (url === "/me/leases") return send(res, 200, []);
-  if (url === "/buildings") return send(res, 200, []);
-  if (url === "/notifications/unread-count") return send(res, 200, { count: 0 });
-  if (url.startsWith("/notifications")) return send(res, 200, []);
-  if (url === "/chat/rooms") return send(res, 200, []);
+  // 대시보드 SSR이 부르는 읽기(GET) — 안전 기본값.
+  // 메서드 가드로 읽기 경로가 다른 메서드까지 200을 반환하는 drift를 막는다.
+  if (method === "GET") {
+    if (url === "/me/leases") return send(res, 200, []);
+    if (url === "/buildings") return send(res, 200, []);
+    if (url === "/chat/rooms") return send(res, 200, []);
+    if (url === "/notifications/unread-count") return send(res, 200, { count: 0 });
+    if (url === "/notifications") return send(res, 200, []);
+  }
+
+  // 알림 읽음 처리(PATCH) — 전체읽음 /notifications/read, 개별읽음 /notifications/:id/read.
+  // 실 BE 계약({ok:true})과 일치시켜, 이전 catch-all이 PATCH에도 []를 답하던 문제를 제거.
+  if (method === "PATCH" && url.startsWith("/notifications") && url.endsWith("/read")) {
+    return send(res, 200, { ok: true });
+  }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
   send(res, 404, { message: `mock-be: unhandled ${method} ${url}` });
