@@ -4,6 +4,8 @@ export const E2E_CREDENTIALS = {
   password: "password123",
   // 목 BE가 이 이메일이면 401을 반환한다(로그인 실패 경로 트리거).
   failEmail: "fail@e2e.test",
+  // 설정 페이지 프로필 표시 이름(렌더·이름 필드 프리필 검증용).
+  tenantName: "김입주",
 } as const;
 
 // 목 BE가 발급하고 인증 픽스처가 쿠키에 주입하는 세션 토큰(값은 임의 — 목 /auth/me가 무조건 응답).

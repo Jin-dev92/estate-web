@@ -58,12 +58,30 @@ const server = createServer(async (req, res) => {
     if (url === "/chat/rooms") return send(res, 200, []);
     if (url === "/notifications/unread-count") return send(res, 200, { count: 0 });
     if (url === "/notifications") return send(res, 200, []);
+    // 설정 SSR(backendProfile)이 부르는 프로필 조회.
+    if (url === "/auth/profile")
+      return send(res, 200, {
+        id: "u-e2e",
+        email: E2E_CREDENTIALS.tenantEmail,
+        name: E2E_CREDENTIALS.tenantName,
+        role: ROLE.TENANT,
+      });
   }
 
   // 알림 읽음 처리(PATCH) — 전체읽음 /notifications/read, 개별읽음 /notifications/:id/read.
   // 실 BE 계약({ok:true})과 일치시켜, 이전 catch-all이 PATCH에도 []를 답하던 문제를 제거.
   if (method === "PATCH" && url.startsWith("/notifications") && url.endsWith("/read")) {
     return send(res, 200, { ok: true });
+  }
+
+  // 프로필 이름 수정(PATCH) — 무상태라 성공(200)만 표현하고 응답 name은 고정값.
+  if (method === "PATCH" && url === "/auth/profile") {
+    return send(res, 200, {
+      id: "u-e2e",
+      email: E2E_CREDENTIALS.tenantEmail,
+      name: E2E_CREDENTIALS.tenantName,
+      role: ROLE.TENANT,
+    });
   }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
