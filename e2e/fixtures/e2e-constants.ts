@@ -11,3 +11,11 @@ export const E2E_CREDENTIALS = {
 // 목 BE가 발급하고 인증 픽스처가 쿠키에 주입하는 세션 토큰(값은 임의 — 목 /auth/me가 무조건 응답).
 // server.ts(발급)와 fixtures/auth.ts(주입) 두 곳이 공유하므로 단일 출처로 둔다.
 export const E2E_SESSION_TOKEN = "e2e-token";
+
+// 게시판 E2E 결합 상수(목 BE와 테스트가 공유).
+export const E2E_BOARD = {
+  buildingId: "b-e2e",
+  postId: "p-e2e",
+  postTitle: "E2E 공지 제목",
+  postBody: "E2E 본문 내용입니다.",
+} as const;
