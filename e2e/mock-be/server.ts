@@ -1,6 +1,13 @@
 import { createServer } from "node:http";
-import { ROLE, POST_CATEGORY } from "../../lib/constants";
-import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_BOARD } from "../fixtures/e2e-constants";
+import { E2E_CREDENTIALS, E2E_SESSION_TOKEN } from "../fixtures/e2e-constants";
+import {
+  mockMe,
+  mockProfile,
+  mockPost,
+  mockPostDetail,
+  mockCreatedPost,
+  mockCreatedComment,
+} from "../fixtures/mock-data";
 
 const PORT = 3099;
 
@@ -47,7 +54,7 @@ const server = createServer(async (req, res) => {
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
   if (url === "/auth/me" && method === "GET") {
-    return send(res, 200, { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: ROLE.TENANT });
+    return send(res, 200, mockMe());
   }
 
   // 대시보드 SSR이 부르는 읽기(GET) — 안전 기본값.
@@ -59,34 +66,12 @@ const server = createServer(async (req, res) => {
     if (url === "/notifications/unread-count") return send(res, 200, { count: 0 });
     if (url === "/notifications") return send(res, 200, []);
     // 설정 SSR(backendProfile)이 부르는 프로필 조회.
-    if (url === "/auth/profile")
-      return send(res, 200, {
-        id: "u-e2e",
-        email: E2E_CREDENTIALS.tenantEmail,
-        name: E2E_CREDENTIALS.tenantName,
-        role: ROLE.TENANT,
-      });
+    if (url === "/auth/profile") return send(res, 200, mockProfile());
     // 게시판 목록(GET /buildings/:id/posts).
     if (url.startsWith("/buildings/") && url.endsWith("/posts"))
-      return send(res, 200, [
-        {
-          id: E2E_BOARD.postId,
-          category: POST_CATEGORY.FREE,
-          title: E2E_BOARD.postTitle,
-          authorId: "u-e2e",
-          createdAt: "2026-07-01T00:00:00.000Z",
-        },
-      ]);
+      return send(res, 200, [mockPost()]);
     // 게시글 상세(GET /posts/:id) — 댓글 없음.
-    if (/^\/posts\/[^/]+$/.test(url))
-      return send(res, 200, {
-        id: E2E_BOARD.postId,
-        category: POST_CATEGORY.FREE,
-        title: E2E_BOARD.postTitle,
-        authorId: "u-e2e",
-        content: E2E_BOARD.postBody,
-        comments: [],
-      });
+    if (/^\/posts\/[^/]+$/.test(url)) return send(res, 200, mockPostDetail());
   }
 
   // 알림 읽음 처리(PATCH) — 전체읽음 /notifications/read, 개별읽음 /notifications/:id/read.
@@ -97,27 +82,17 @@ const server = createServer(async (req, res) => {
 
   // 프로필 이름 수정(PATCH) — 무상태라 성공(200)만 표현하고 응답 name은 고정값.
   if (method === "PATCH" && url === "/auth/profile") {
-    return send(res, 200, {
-      id: "u-e2e",
-      email: E2E_CREDENTIALS.tenantEmail,
-      name: E2E_CREDENTIALS.tenantName,
-      role: ROLE.TENANT,
-    });
+    return send(res, 200, mockProfile());
   }
 
   // 게시글 작성(POST /buildings/:id/posts).
   if (method === "POST" && url.startsWith("/buildings/") && url.endsWith("/posts")) {
-    return send(res, 201, {
-      id: "p-new-e2e",
-      category: POST_CATEGORY.FREE,
-      title: E2E_BOARD.postTitle,
-      authorId: "u-e2e",
-    });
+    return send(res, 201, mockCreatedPost());
   }
 
   // 댓글 작성(POST /posts/:id/comments).
   if (method === "POST" && url.startsWith("/posts/") && url.endsWith("/comments")) {
-    return send(res, 201, { id: "c-new-e2e", authorId: "u-e2e", content: "e2e-comment" });
+    return send(res, 201, mockCreatedComment());
   }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
