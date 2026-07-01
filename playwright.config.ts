@@ -25,7 +25,10 @@ export default defineConfig({
     {
       command: "pnpm build && pnpm start",
       url: `http://localhost:${NEXT_PORT}`,
-      reuseExistingServer: !process.env.CI,
+      // 항상 새 서버를 띄워야 BACKEND_URL이 목 BE를 가리킴을 보장한다.
+      // reuseExistingServer: true이면 next dev(:3000)가 살아있을 때 재사용하여
+      // BACKEND_URL 없이 실 BE(:3001)를 바라보는 비결정적 동작이 발생한다.
+      reuseExistingServer: false,
       timeout: 180_000,
       env: { BACKEND_URL: `http://localhost:${MOCK_BE_PORT}` },
     },

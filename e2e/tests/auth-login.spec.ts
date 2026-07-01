@@ -1,11 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { MESSAGES } from "../../lib/messages";
+import { E2E_CREDENTIALS } from "../fixtures/e2e-constants";
 
 // Spec-as-Code: 읽으면 "로그인하면 대시보드로 간다"는 명세, 돌리면 검증.
 test("정상 로그인 시 대시보드로 이동한다", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("이메일").fill("tenant@e2e.test");
-  await page.getByLabel("비밀번호").fill("password123");
+  await page.getByLabel("이메일").fill(E2E_CREDENTIALS.tenantEmail);
+  await page.getByLabel("비밀번호").fill(E2E_CREDENTIALS.password);
   await page.getByRole("button", { name: "로그인", exact: true }).click();
 
   await expect(page).toHaveURL(/\/dashboard/);
@@ -16,7 +17,7 @@ test("정상 로그인 시 대시보드로 이동한다", async ({ page }) => {
 
 test("잘못된 자격이면 에러 메시지를 보이고 로그인에 머문다", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("이메일").fill("fail@e2e.test");
+  await page.getByLabel("이메일").fill(E2E_CREDENTIALS.failEmail);
   await page.getByLabel("비밀번호").fill("wrongpass");
   await page.getByRole("button", { name: "로그인", exact: true }).click();
 

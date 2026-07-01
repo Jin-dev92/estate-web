@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { E2E_CREDENTIALS } from "../fixtures/e2e-constants";
 
 const PORT = 3099;
 
@@ -29,10 +30,11 @@ const server = createServer(async (req, res) => {
   // readiness 체크
   if (url === "/health") return send(res, 200, { ok: true });
 
-  // 로그인: fail@e2e.test 이면 401, 그 외엔 토큰 발급(무상태 분기).
+  // 로그인: failEmail 이면 401, 그 외엔 토큰 발급(무상태 분기).
   if (url === "/auth/login" && method === "POST") {
     const body = await readJson(req);
-    if (body.email === "fail@e2e.test") {
+    if (body.email === E2E_CREDENTIALS.failEmail) {
+      // message는 FE에서 사용하지 않는다 — errorMap → MESSAGES.auth.invalidCredentials 로 덮어쓴다.
       return send(res, 401, {
         statusCode: 401,
         code: "AUTH_INVALID_CREDENTIALS",
@@ -44,7 +46,7 @@ const server = createServer(async (req, res) => {
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
   if (url === "/auth/me" && method === "GET") {
-    return send(res, 200, { id: "u-e2e", email: "tenant@e2e.test", role: "TENANT" });
+    return send(res, 200, { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: "TENANT" });
   }
 
   // 대시보드 SSR이 부르는 읽기 — 안전 기본값.
@@ -52,12 +54,12 @@ const server = createServer(async (req, res) => {
   if (url === "/buildings") return send(res, 200, []);
   if (url === "/notifications/unread-count") return send(res, 200, { count: 0 });
   if (url.startsWith("/notifications")) return send(res, 200, []);
+  if (url === "/chat/rooms") return send(res, 200, []);
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
   send(res, 404, { message: `mock-be: unhandled ${method} ${url}` });
 });
 
 server.listen(PORT, () => {
-  // eslint-disable-next-line no-console
   console.log(`[mock-be] listening on http://localhost:${PORT}`);
 });

@@ -218,6 +218,7 @@ String(field ?? "").trim()
 
 ## 실행
 - `pnpm e2e` — 목 BE + Next를 자동 기동해 실행. `pnpm e2e:ui` — UI 모드. `pnpm e2e:burn` — `--repeat-each=5`(flaky 확인).
+- `pnpm e2e`는 **자체 Next 서버를 빌드·기동**한다. 별도로 `next dev`를 띄워 둔 상태로 실행하지 않는다(BACKEND_URL 미설정 서버를 재사용해 실 BE를 바라볼 위험이 있다).
 
 ## 규칙 (flaky 차단)
 - **시멘틱 셀렉터만**: `getByRole`/`getByLabel`/`getByText`(name). CSS 클래스·DOM 구조 ❌.
