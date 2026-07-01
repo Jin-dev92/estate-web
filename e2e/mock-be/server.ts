@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
-import { ROLE } from "../../lib/constants";
-import { E2E_CREDENTIALS, E2E_SESSION_TOKEN } from "../fixtures/e2e-constants";
+import { ROLE, POST_CATEGORY } from "../../lib/constants";
+import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_BOARD } from "../fixtures/e2e-constants";
 
 const PORT = 3099;
 
@@ -66,6 +66,27 @@ const server = createServer(async (req, res) => {
         name: E2E_CREDENTIALS.tenantName,
         role: ROLE.TENANT,
       });
+    // 게시판 목록(GET /buildings/:id/posts).
+    if (url.startsWith("/buildings/") && url.endsWith("/posts"))
+      return send(res, 200, [
+        {
+          id: E2E_BOARD.postId,
+          category: POST_CATEGORY.FREE,
+          title: E2E_BOARD.postTitle,
+          authorId: "u-e2e",
+          createdAt: "2026-07-01T00:00:00.000Z",
+        },
+      ]);
+    // 게시글 상세(GET /posts/:id) — 댓글 없음.
+    if (/^\/posts\/[^/]+$/.test(url))
+      return send(res, 200, {
+        id: E2E_BOARD.postId,
+        category: POST_CATEGORY.FREE,
+        title: E2E_BOARD.postTitle,
+        authorId: "u-e2e",
+        content: E2E_BOARD.postBody,
+        comments: [],
+      });
   }
 
   // 알림 읽음 처리(PATCH) — 전체읽음 /notifications/read, 개별읽음 /notifications/:id/read.
@@ -82,6 +103,21 @@ const server = createServer(async (req, res) => {
       name: E2E_CREDENTIALS.tenantName,
       role: ROLE.TENANT,
     });
+  }
+
+  // 게시글 작성(POST /buildings/:id/posts).
+  if (method === "POST" && url.startsWith("/buildings/") && url.endsWith("/posts")) {
+    return send(res, 201, {
+      id: "p-new-e2e",
+      category: POST_CATEGORY.FREE,
+      title: E2E_BOARD.postTitle,
+      authorId: "u-e2e",
+    });
+  }
+
+  // 댓글 작성(POST /posts/:id/comments).
+  if (method === "POST" && url.startsWith("/posts/") && url.endsWith("/comments")) {
+    return send(res, 201, { id: "c-new-e2e", authorId: "u-e2e", content: "e2e-comment" });
   }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
