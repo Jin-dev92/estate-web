@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { MESSAGES } from "../../lib/messages";
-import { ROLE_LABEL } from "../../lib/constants";
+import { ROLE_LABEL, API_ROUTES } from "../../lib/constants";
 import { loginAs } from "../fixtures/auth";
 import { E2E_CREDENTIALS } from "../fixtures/e2e-constants";
 
@@ -20,8 +20,13 @@ test("이름을 수정하면 에러 없이 저장된다(성공경로)", async ({
   await page.goto("/settings");
 
   await page.getByLabel(MESSAGES.settings.name).fill("박수정");
-  await page.getByRole("button", { name: MESSAGES.settings.saveName }).click();
-
+  const [res] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes(API_ROUTES.profile) && r.request().method() === "PATCH",
+    ),
+    page.getByRole("button", { name: MESSAGES.settings.saveName }).click(),
+  ]);
+  expect(res.ok()).toBe(true);
   // 성공경로 — 실패 문구가 뜨지 않고 설정 페이지에 머문다(무상태라 영구 반영은 검증 안 함).
   await expect(page.getByText(MESSAGES.settings.updateFailed)).not.toBeVisible();
   await expect(page).toHaveURL(/\/settings/);
