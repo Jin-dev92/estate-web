@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
-import { E2E_CREDENTIALS } from "../fixtures/e2e-constants";
+import { ROLE } from "../../lib/constants";
+import { E2E_CREDENTIALS, E2E_SESSION_TOKEN } from "../fixtures/e2e-constants";
 
 const PORT = 3099;
 
@@ -41,12 +42,12 @@ const server = createServer(async (req, res) => {
         message: "이메일 또는 비밀번호가 올바르지 않습니다.",
       });
     }
-    return send(res, 201, { accessToken: "e2e-token" });
+    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
   }
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
   if (url === "/auth/me" && method === "GET") {
-    return send(res, 200, { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: "TENANT" });
+    return send(res, 200, { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: ROLE.TENANT });
   }
 
   // 대시보드 SSR이 부르는 읽기(GET) — 안전 기본값.
