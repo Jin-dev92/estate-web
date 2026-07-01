@@ -205,3 +205,27 @@ String(field ?? "").trim()
 - 검증 스키마는 `lib/schemas.ts`에 zod로 정의하고 `zodResolver`로 연결한다.
 - 검증/에러 메시지는 `lib/messages.ts`(`MESSAGES`)를 참조해 카피 단일 출처를 유지한다.
 - 필드 에러는 `Field`의 `error` prop으로, 서버 에러는 폼 상단 메시지로 표시한다.
+
+---
+
+# E2E 테스트 (Playwright)
+
+> Critical User Flow 회귀 방지용. 전부 커버가 아니라 "실패 시 손상이 큰" 핵심 플로우만.
+
+## 구조
+- `e2e/tests/*.spec.ts` — 테스트(Playwright). `e2e/fixtures/` — 헬퍼. `e2e/mock-be/` — 목 BE 서버.
+- vitest(`*.test.tsx`)와 분리: vitest는 `e2e/**` 제외, Playwright는 `e2e/tests`만.
+
+## 실행
+- `pnpm e2e` — 목 BE + Next를 자동 기동해 실행. `pnpm e2e:ui` — UI 모드. `pnpm e2e:burn` — `--repeat-each=5`(flaky 확인).
+
+## 규칙 (flaky 차단)
+- **시멘틱 셀렉터만**: `getByRole`/`getByLabel`/`getByText`(name). CSS 클래스·DOM 구조 ❌.
+- **하드 대기 금지**: `waitForTimeout` ❌ → `expect`의 auto-wait ✅.
+- **작성 직후 burn-in**: `pnpm e2e:burn`으로 반복, 한 번이라도 실패하면 머지 전 수정.
+- **BE는 목**(`e2e/mock-be/server.ts`): SSR·클라 호출 모두 `BACKEND_URL`로 목을 본다. 새 화면이 새 BE 경로를 부르면 목에 응답을 추가한다.
+- **인증 시작점**: `loginAs(context)`로 세션 쿠키 주입(로그인 UI 반복 금지).
+- **카피·경로**: 리터럴 하드코딩 금지 — `MESSAGES`·`SESSION_COOKIE` 등 단일출처 import.
+
+## 한계
+- 목 BE라 실 BE 계약 불일치는 못 잡는다(각 레포 단위/통합 테스트 담당). E2E는 FE 컴포넌트 경계·플로우 회귀에 집중.
