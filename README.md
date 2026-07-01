@@ -34,6 +34,29 @@
 
 > 후속(F): OAuth 소셜 로그인, 채팅 자동 번역 — 백엔드 F1 · F2에 맞춰 추가.
 
+## E2E 테스트 (Playwright)
+
+목 BE 서버(`BACKEND_URL`) 기반 결정론적 E2E. `loginAs` prefill 픽스처로 인증 상태 시작, 시멘틱 셀렉터·burn-in으로 flaky 차단. `pnpm e2e`로 목 BE + Next를 자동 기동. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
+
+| 커버리지 | 상태 |
+|---|---|
+| 로그인 스모크 (성공→대시보드 / 실패→에러) | ✅ |
+| 설정 (프로필 렌더 · 이름 수정 · 로그아웃) | ✅ |
+| 게시판 (목록 · 상세 · 글/댓글 작성) | ✅ |
+| 목 BE 타입 drift 게이트 (`tsc --noEmit`로 `lib/api` 계약 변경 검출) | ✅ |
+
+### 후속 백로그
+
+- [ ] **테스트 typecheck 정비**: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
+- [ ] **`MESSAGES.auth.login` 신설**: 로그인 버튼 카피 단일 출처화(로그인 페이지·E2E 스펙에서 `"로그인"` 리터럴 제거).
+- [ ] **알림 E2E**(네 번째 Critical Flow): 목록 · 단건/전체 읽음.
+- [ ] **상태있는 목 옵션**: 작성 글/댓글·프로필 수정이 목록에 반영되는지 영속성 단언(현재 무상태라 성공경로 스모크만).
+- [ ] **drift 게이트 확장**: leases · buildings · notifications 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입.
+- [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
+- [ ] **멀티브라우저**: webkit · firefox 프로젝트 추가.
+
+> 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
+
 ## 시작하기
 
 > 패키지 매니저는 **pnpm**입니다(`packageManager` 필드로 버전 고정 — `corepack enable`로 자동 사용).
