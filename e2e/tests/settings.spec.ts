@@ -81,5 +81,5 @@ test("로그아웃하면 로그인 페이지로 이동한다", async ({ page, co
   await page.getByRole("button", { name: MESSAGES.settings.logout }).click();
 
   await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByRole("button", { name: "로그인", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: MESSAGES.auth.login, exact: true })).toBeVisible();
 });

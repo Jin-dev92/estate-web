@@ -5,6 +5,7 @@
  */
 export const MESSAGES = {
   auth: {
+    login: "로그인",
     invalidCredentials: "이메일 또는 비밀번호를 확인하세요",
     emailInUse: "이미 가입된 이메일입니다",
     loginFailed: "로그인하지 못했어요. 잠시 후 다시 시도해주세요.",

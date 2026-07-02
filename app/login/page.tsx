@@ -51,7 +51,7 @@ export default function LoginPage() {
         </div>
         {serverError && <p className="mt-3 text-[13px] text-danger">{serverError}</p>}
         <div className="mt-6">
-          <Button type="submit" disabled={loading}>{loading ? "확인 중…" : "로그인"}</Button>
+          <Button type="submit" disabled={loading}>{loading ? "확인 중…" : MESSAGES.auth.login}</Button>
         </div>
         <p className="mt-5 text-center text-[14px] text-text-2">
           처음이신가요? <Link href="/signup" className="font-bold text-brand-600">회원가입</Link>

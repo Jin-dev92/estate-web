@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import LoginPage from "./page";
+import { MESSAGES } from "@/lib/messages";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -10,7 +11,7 @@ it("빈 폼 제출 시 zod 검증 오류 메시지가 표시되고 fetch는 호�
   const fetchSpy = vi.spyOn(globalThis, "fetch");
   render(<LoginPage />);
 
-  fireEvent.click(screen.getByRole("button", { name: "로그인" }));
+  fireEvent.click(screen.getByRole("button", { name: MESSAGES.auth.login }));
 
   await waitFor(() => {
     // zod가 이메일·비밀번호 검증 오류를 하나 이상 표시해야 함
