@@ -56,12 +56,13 @@
 
 ### 후속 백로그 (남은 작업)
 
-> 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`)은 위 커버리지 표에 반영. 아래는 **남은 작업**만.
+> 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`)은 위 커버리지 표에 반영. 아래는 **남은 작업**만. 우선순위 순으로 정렬(2026-07-02 지정).
 
-- [ ] **테스트 typecheck 정비**: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
-- [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
-- [ ] **채팅 E2E 확장(잔여)**: 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)만 미커버 — 방 목록·진입·start-chat·실시간 연결·전송→에코·비참가자 에러는 커버 완료(스펙: `docs/test/e2e-chat-spec.md`).
-- [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
+- [ ] **[우선순위 1] 신규 기능(OAuth 소셜 로그인 / 채팅 자동 번역)**: 백엔드 F1 · F2에 맞춰 추가.
+- [ ] **[우선순위 2] 채팅 E2E 확장(잔여)**: 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)만 미커버 — 방 목록·진입·start-chat·실시간 연결·전송→에코·비참가자 에러는 커버 완료(스펙: `docs/test/e2e-chat-spec.md`).
+- [ ] **[우선순위 3] 공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
+- [ ] 드리프트 게이트 확장: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
+- [ ] 테스트 typecheck 정비: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
 
