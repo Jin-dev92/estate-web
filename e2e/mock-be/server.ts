@@ -12,6 +12,9 @@ import {
   mockSignup,
   mockInvitePreview,
   mockRedeem,
+  mockBuilding,
+  mockUnit,
+  mockIssuedInvite,
 } from "../fixtures/mock-data";
 
 const PORT = 3099;
@@ -72,7 +75,7 @@ const server = createServer(async (req, res) => {
   // 메서드 가드로 읽기 경로가 다른 메서드까지 200을 반환하는 drift를 막는다.
   if (method === "GET") {
     if (url === "/me/leases") return send(res, 200, []);
-    if (url === "/buildings") return send(res, 200, []);
+    if (url === "/buildings") return send(res, 200, [mockBuilding()]);
     if (url === "/chat/rooms") return send(res, 200, []);
     if (url === "/notifications/unread-count") return send(res, 200, mockUnreadCount());
     if (url === "/notifications") return send(res, 200, mockNotifications());
@@ -81,6 +84,9 @@ const server = createServer(async (req, res) => {
     // 게시판 목록(GET /buildings/:id/posts).
     if (url.startsWith("/buildings/") && url.endsWith("/posts"))
       return send(res, 200, [mockPost()]);
+    // 호실 목록(GET /buildings/:id/units, OWNER 건물 상세).
+    if (url.startsWith("/buildings/") && url.endsWith("/units"))
+      return send(res, 200, [mockUnit()]);
     // 게시글 상세(GET /posts/:id) — 댓글 없음.
     if (/^\/posts\/[^/]+$/.test(url)) return send(res, 200, mockPostDetail());
     // 초대코드 미리보기(GET /invite-codes/:code/preview) — 공개(미인증).
@@ -112,6 +118,11 @@ const server = createServer(async (req, res) => {
   // 초대 수락/입주(POST /invite-codes/redeem) — 가입 후 자동 로그인 토큰으로 호출된다.
   if (method === "POST" && url === "/invite-codes/redeem") {
     return send(res, 201, mockRedeem());
+  }
+
+  // 초대코드 발급(POST /units/:unitId/invite-codes, OWNER).
+  if (method === "POST" && url.startsWith("/units/") && url.endsWith("/invite-codes")) {
+    return send(res, 201, mockIssuedInvite());
   }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).

@@ -5,18 +5,29 @@ import type {
   PostDetail,
   Comment,
   Notification,
+  Building,
+  Unit,
   backendSignup,
   backendPreviewInvite,
   backendRedeemInvite,
+  backendIssueInvite,
 } from "../../lib/api";
 import { ROLE, POST_CATEGORY, NOTIFICATION_TYPE, LEASE_STATUS } from "../../lib/constants";
-import { E2E_CREDENTIALS, E2E_BOARD, E2E_NOTIFICATION, E2E_SIGNUP, E2E_INVITE } from "./e2e-constants";
+import {
+  E2E_CREDENTIALS,
+  E2E_BOARD,
+  E2E_NOTIFICATION,
+  E2E_SIGNUP,
+  E2E_INVITE,
+  E2E_BUILDING,
+} from "./e2e-constants";
 
 // 목 응답을 lib/api 백엔드 함수의 반환 타입에 묶는다(drift 게이트).
 // backend* 함수는 type-only import이므로 런타임(server-only) 부작용 없이 계약만 참조한다.
 type SignupResult = Awaited<ReturnType<typeof backendSignup>>;
 type InvitePreview = Awaited<ReturnType<typeof backendPreviewInvite>>;
 type RedeemResult = Awaited<ReturnType<typeof backendRedeemInvite>>;
+type IssuedInvite = Awaited<ReturnType<typeof backendIssueInvite>>;
 
 // 목 응답을 lib/api 도메인 타입에 묶는다 — 계약(타입) 변경 시 여기서 타입에러가 나
 // CI typecheck가 실패하므로 E2E false-green(drift)을 방지한다.
@@ -103,4 +114,24 @@ export function mockInvitePreview(code: string): InvitePreview {
 // 초대 수락/입주(POST /invite-codes/redeem) — 활성 리스 생성 성공만 표현.
 export function mockRedeem(): RedeemResult {
   return { id: "lease-e2e", unitId: "unit-e2e", status: LEASE_STATUS.ACTIVE };
+}
+
+// 내 건물 목록(GET /buildings, OWNER).
+export function mockBuilding(): Building {
+  return { id: E2E_BUILDING.id, name: E2E_BUILDING.name, address: E2E_BUILDING.address };
+}
+
+// 건물 호실 목록(GET /buildings/:id/units).
+export function mockUnit(): Unit {
+  return {
+    id: E2E_BUILDING.unitId,
+    buildingId: E2E_BUILDING.id,
+    name: E2E_BUILDING.unitName,
+    floor: E2E_BUILDING.floor,
+  };
+}
+
+// 초대코드 발급(POST /units/:unitId/invite-codes) — 무상태라 고정 코드/만료를 표현.
+export function mockIssuedInvite(): IssuedInvite {
+  return { code: E2E_BUILDING.issuedCode, expiresInSec: E2E_BUILDING.expiresInSec };
 }
