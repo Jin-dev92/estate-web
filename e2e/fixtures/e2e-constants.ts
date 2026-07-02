@@ -31,3 +31,21 @@ export const E2E_NOTIFICATION = {
   readTitle: "댓글이 달렸어요",
   readBody: "내 글에 새 댓글이 달렸어요.",
 } as const;
+
+// 회원가입 E2E 신규 계정 입력값(목 BE는 무상태라 중복 검사 없이 성공만 표현).
+export const E2E_SIGNUP = {
+  ownerName: "김건물",
+  ownerEmail: "owner@e2e.test",
+  tenantName: "박입주",
+  tenantEmail: "newtenant@e2e.test",
+  password: "password123",
+} as const;
+
+// 입주자 초대 E2E 결합 상수(목 BE와 테스트가 공유).
+// validCode만 미리보기 valid=true → 건물/호실 노출, 그 외 코드는 valid=false.
+export const E2E_INVITE = {
+  validCode: "E2ECODE1",
+  invalidCode: "BADCODE0",
+  buildingName: "터전빌라",
+  unitName: "101호",
+} as const;

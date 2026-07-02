@@ -9,6 +9,9 @@ import {
   mockCreatedComment,
   mockNotifications,
   mockUnreadCount,
+  mockSignup,
+  mockInvitePreview,
+  mockRedeem,
 } from "../fixtures/mock-data";
 
 const PORT = 3099;
@@ -54,6 +57,12 @@ const server = createServer(async (req, res) => {
     return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
   }
 
+  // 회원가입(무상태) — 생성 성공만 표현. Next 라우트가 이어서 /auth/login으로 토큰을 받는다.
+  if (url === "/auth/signup" && method === "POST") {
+    const body = await readJson(req);
+    return send(res, 201, mockSignup(String(body.role ?? "")));
+  }
+
   // 인증 사용자 정보(서명 검증 없음 — 목).
   if (url === "/auth/me" && method === "GET") {
     return send(res, 200, mockMe());
@@ -74,6 +83,9 @@ const server = createServer(async (req, res) => {
       return send(res, 200, [mockPost()]);
     // 게시글 상세(GET /posts/:id) — 댓글 없음.
     if (/^\/posts\/[^/]+$/.test(url)) return send(res, 200, mockPostDetail());
+    // 초대코드 미리보기(GET /invite-codes/:code/preview) — 공개(미인증).
+    const preview = url.match(/^\/invite-codes\/([^/]+)\/preview$/);
+    if (preview) return send(res, 200, mockInvitePreview(decodeURIComponent(preview[1])));
   }
 
   // 알림 읽음 처리(PATCH) — 전체읽음 /notifications/read, 개별읽음 /notifications/:id/read.
@@ -95,6 +107,11 @@ const server = createServer(async (req, res) => {
   // 댓글 작성(POST /posts/:id/comments).
   if (method === "POST" && url.startsWith("/posts/") && url.endsWith("/comments")) {
     return send(res, 201, mockCreatedComment());
+  }
+
+  // 초대 수락/입주(POST /invite-codes/redeem) — 가입 후 자동 로그인 토큰으로 호출된다.
+  if (method === "POST" && url === "/invite-codes/redeem") {
+    return send(res, 201, mockRedeem());
   }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
