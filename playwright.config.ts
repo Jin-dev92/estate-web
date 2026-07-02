@@ -15,7 +15,12 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // 크로스브라우저 회귀 방지 — 3개 엔진(Chromium·Firefox·WebKit)에서 동일 스위트 실행.
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+  ],
   webServer: [
     {
       command: "pnpm e2e:mock-be",
@@ -41,6 +46,8 @@ export default defineConfig({
       env: {
         BACKEND_URL: `http://localhost:${MOCK_BE_PORT}`,
         NEXT_PUBLIC_WS_URL: `http://localhost:${MOCK_WS_PORT}`,
+        // 프로덕션 빌드를 http로 띄우므로 secure 쿠키를 꺼야 webkit이 세션을 잡는다(lib/session.ts).
+        E2E_INSECURE_COOKIE: "1",
       },
     },
   ],
