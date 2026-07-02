@@ -47,7 +47,7 @@
 | 건물·호실 (OWNER: 건물 목록→상세 호실 · 초대코드 발급→코드 노출) | ✅ |
 | 게시판 (목록 · 상세 · 글/댓글 작성) | ✅ |
 | 알림 센터 (목록 렌더 · 단건 읽음+딥링크 · 전체 읽음) | ✅ |
-| 채팅 (1:1 실시간: 방 연결 · 전송→에코 수신, 목 socket.io) | ✅ |
+| 채팅 (방 목록→방 진입 · 1:1 실시간: 방 연결·전송→에코 수신, 목 socket.io) | ✅ |
 | 목 BE 타입 drift 게이트 (`tsc --noEmit`로 `lib/api` 계약 변경 검출) | ✅ |
 
 ### 후속 백로그
@@ -56,7 +56,7 @@
 - [ ] **`MESSAGES.auth.login` 신설**: 로그인 버튼 카피 단일 출처화(로그인 페이지·E2E 스펙에서 `"로그인"` 리터럴 제거).
 - [ ] **상태있는 목 옵션**: 작성 글/댓글·프로필 수정·알림 읽음이 목록에 반영되는지 영속성 단언(현재 무상태라 성공경로 스모크만).
 - [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
-- [ ] **채팅 E2E 확장**: 현재는 실시간 happy-path(연결·전송→에코)만. 방 목록 렌더·start-chat 방생성(REST)·재연결/`connect_error`/비참가자 실패 분기·멀티유저 수신은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
+- [ ] **채팅 E2E 확장**: 방 목록 렌더·진입, 실시간 연결·전송→에코는 커버. start-chat 방생성(무상태 목에선 목록 렌더와 충돌 — 상태있는 목 필요)·재연결/`connect_error`/비참가자 실패 분기·멀티유저 수신은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
 - [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
 - [ ] **멀티브라우저**: webkit · firefox 프로젝트 추가.
 

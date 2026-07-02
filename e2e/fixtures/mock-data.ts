@@ -7,6 +7,7 @@ import type {
   Notification,
   Building,
   Unit,
+  ChatRoom,
   backendSignup,
   backendPreviewInvite,
   backendRedeemInvite,
@@ -20,6 +21,7 @@ import {
   E2E_SIGNUP,
   E2E_INVITE,
   E2E_BUILDING,
+  E2E_CHAT,
 } from "./e2e-constants";
 
 // 목 응답을 lib/api 백엔드 함수의 반환 타입에 묶는다(drift 게이트).
@@ -38,6 +40,18 @@ export function mockMe(): Me {
 // OWNER 세션(대시보드 OWNER 홈 렌더 검증) — /auth/me가 owner 토큰일 때 반환.
 export function mockOwnerMe(): Me {
   return { id: "u-owner-e2e", email: E2E_SIGNUP.ownerEmail, role: ROLE.OWNER };
+}
+
+// 채팅 방 목록(GET /chat/rooms) — buildingId를 E2E_BUILDING에 맞춰 OWNER 목록 라벨이
+// "터전오너빌딩 · 입주자"로 렌더되게 한다(건물명은 /buildings 목에서 매핑).
+export function mockChatRoom(): ChatRoom {
+  return {
+    id: E2E_CHAT.roomId,
+    buildingId: E2E_BUILDING.id,
+    ownerId: "u-owner-e2e",
+    tenantId: "u-e2e",
+    lastMessage: { content: "안녕하세요", createdAt: "2026-07-01T00:00:00.000Z" },
+  };
 }
 
 export function mockProfile(): Profile {
