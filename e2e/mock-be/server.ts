@@ -16,6 +16,7 @@ import {
   mockBuilding,
   mockUnit,
   mockIssuedInvite,
+  mockChatRoom,
 } from "../fixtures/mock-data";
 
 const PORT = 3099;
@@ -79,7 +80,7 @@ const server = createServer(async (req, res) => {
   if (method === "GET") {
     if (url === "/me/leases") return send(res, 200, []);
     if (url === "/buildings") return send(res, 200, [mockBuilding()]);
-    if (url === "/chat/rooms") return send(res, 200, []);
+    if (url === "/chat/rooms") return send(res, 200, [mockChatRoom()]);
     // 방 히스토리(GET /chat/rooms/:id/messages) — 실시간 에코만 테스트하므로 빈 히스토리.
     if (/^\/chat\/rooms\/[^/]+\/messages$/.test(url)) return send(res, 200, []);
     if (url === "/notifications/unread-count") return send(res, 200, mockUnreadCount());
