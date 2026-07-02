@@ -3,13 +3,16 @@ import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_OWNER_TOKEN } from "../fixtures
 import {
   mockMe,
   mockOwnerMe,
-  mockProfile,
+  getProfileFor,
+  setProfileName,
   listPosts,
   getPostDetail,
   addPost,
   addComment,
-  mockNotifications,
-  mockUnreadCount,
+  getNotificationsFor,
+  unreadCountFor,
+  markNotificationRead,
+  markAllNotificationsRead,
   mockSignup,
   mockInvitePreview,
   mockRedeem,
@@ -40,6 +43,11 @@ function readJson(req: import("node:http").IncomingMessage): Promise<Record<stri
 function send(res: import("node:http").ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(body));
+}
+
+// 세션 토큰(Authorization: Bearer <token>) — 토큰 스코프 상태의 버킷 키.
+function bearer(req: import("node:http").IncomingMessage): string {
+  return (req.headers.authorization ?? "").replace(/^Bearer\s+/i, "");
 }
 
 const server = createServer(async (req, res) => {
@@ -88,10 +96,11 @@ const server = createServer(async (req, res) => {
     }
     // 방 히스토리(GET /chat/rooms/:id/messages) — 실시간 에코만 테스트하므로 빈 히스토리.
     if (/^\/chat\/rooms\/[^/]+\/messages$/.test(url)) return send(res, 200, []);
-    if (url === "/notifications/unread-count") return send(res, 200, mockUnreadCount());
-    if (url === "/notifications") return send(res, 200, mockNotifications());
-    // 설정 SSR(backendProfile)이 부르는 프로필 조회.
-    if (url === "/auth/profile") return send(res, 200, mockProfile());
+    // 알림·미읽음 개수 — 토큰 스코프(읽음 처리가 반영된다).
+    if (url === "/notifications/unread-count") return send(res, 200, unreadCountFor(bearer(req)));
+    if (url === "/notifications") return send(res, 200, getNotificationsFor(bearer(req)));
+    // 설정 SSR(backendProfile)이 부르는 프로필 조회 — 토큰 스코프(이름 수정이 반영된다).
+    if (url === "/auth/profile") return send(res, 200, getProfileFor(bearer(req)));
     // 게시판 목록(GET /buildings/:id/posts) — 상태있는 목: 작성 글이 반영된다.
     if (url.startsWith("/buildings/") && url.endsWith("/posts"))
       return send(res, 200, listPosts());
@@ -106,15 +115,19 @@ const server = createServer(async (req, res) => {
     if (preview) return send(res, 200, mockInvitePreview(decodeURIComponent(preview[1])));
   }
 
-  // 알림 읽음 처리(PATCH) — 전체읽음 /notifications/read, 개별읽음 /notifications/:id/read.
-  // 실 BE 계약({ok:true})과 일치시켜, 이전 catch-all이 PATCH에도 []를 답하던 문제를 제거.
+  // 알림 읽음 처리(PATCH) — 토큰 스코프 상태에 반영. 전체읽음 /notifications/read,
+  // 개별읽음 /notifications/:id/read. 실 BE 계약({ok:true})과 일치.
   if (method === "PATCH" && url.startsWith("/notifications") && url.endsWith("/read")) {
+    const oneMatch = url.match(/^\/notifications\/([^/]+)\/read$/);
+    if (oneMatch) markNotificationRead(bearer(req), oneMatch[1]);
+    else if (url === "/notifications/read") markAllNotificationsRead(bearer(req));
     return send(res, 200, { ok: true });
   }
 
-  // 프로필 이름 수정(PATCH) — 무상태라 성공(200)만 표현하고 응답 name은 고정값.
+  // 프로필 이름 수정(PATCH) — 토큰 스코프 상태에 저장, 재조회 시 반영된다.
   if (method === "PATCH" && url === "/auth/profile") {
-    return send(res, 200, mockProfile());
+    const body = await readJson(req);
+    return send(res, 200, setProfileName(bearer(req), String(body.name ?? "")));
   }
 
   // 비밀번호 변경(PATCH /auth/password) — 현재 비밀번호가 센티넬이면 401(불일치), 그 외 성공.

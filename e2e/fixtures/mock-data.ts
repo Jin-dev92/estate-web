@@ -164,6 +164,44 @@ export function mockUnreadCount(): { count: number } {
   return { count: mockNotifications().filter((n) => n.readAt === null).length };
 }
 
+// ── 토큰 스코프 상태(후속 A) ─────────────────────────────────────────────
+// 프로필 이름·알림 읽음을 테스트별(=유니크 토큰별) 버킷으로 격리해 병렬/3브라우저에서
+// 서로 오염되지 않게 한다. 각 토큰은 최초 접근 시 시드(mockProfile/mockNotifications) 기준.
+const profileNameByToken = new Map<string, string>();
+const readNotifIdsByToken = new Map<string, Set<string>>();
+
+export function getProfileFor(token: string): Profile {
+  return { ...mockProfile(), name: profileNameByToken.get(token) ?? E2E_CREDENTIALS.tenantName };
+}
+
+export function setProfileName(token: string, name: string): Profile {
+  profileNameByToken.set(token, name);
+  return getProfileFor(token);
+}
+
+export function getNotificationsFor(token: string): Notification[] {
+  const readIds = readNotifIdsByToken.get(token);
+  if (!readIds || readIds.size === 0) return mockNotifications();
+  const now = new Date().toISOString();
+  return mockNotifications().map((n) => (readIds.has(n.id) ? { ...n, readAt: n.readAt ?? now } : n));
+}
+
+export function unreadCountFor(token: string): { count: number } {
+  return { count: getNotificationsFor(token).filter((n) => n.readAt === null).length };
+}
+
+export function markNotificationRead(token: string, id: string): void {
+  const set = readNotifIdsByToken.get(token) ?? new Set<string>();
+  set.add(id);
+  readNotifIdsByToken.set(token, set);
+}
+
+export function markAllNotificationsRead(token: string): void {
+  const set = readNotifIdsByToken.get(token) ?? new Set<string>();
+  for (const n of mockNotifications()) set.add(n.id);
+  readNotifIdsByToken.set(token, set);
+}
+
 // 회원가입(POST /auth/signup) — 무상태라 생성 성공만 표현. role은 요청값을 되돌린다.
 export function mockSignup(role: SignupResult["role"]): SignupResult {
   return { id: "u-new-e2e", email: E2E_SIGNUP.tenantEmail, role };
