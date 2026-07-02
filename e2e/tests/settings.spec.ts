@@ -59,6 +59,18 @@ test("현재 비밀번호가 틀리면 에러를 보인다", async ({ page, cont
   await expect(page.getByText(MESSAGES.settings.wrongCurrentPassword)).toBeVisible();
 });
 
+test("비밀번호 폼은 현재 비밀번호가 비면 검증 에러를 보이고 요청하지 않는다", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto("/settings");
+
+  // 새 비번만 채우고 현재 비번은 비운 채 제출 → 클라 검증(현재 비번 필수)이 막는다.
+  await page.getByLabel(MESSAGES.settings.newPassword).fill("newpassword123");
+  await page.getByRole("button", { name: MESSAGES.settings.changePassword }).click();
+
+  await expect(page.getByText(MESSAGES.form.invalidInput)).toBeVisible();
+  await expect(page.getByText(MESSAGES.settings.passwordChanged)).not.toBeVisible();
+});
+
 test("로그아웃하면 로그인 페이지로 이동한다", async ({ page, context }) => {
   await loginAs(context);
   await page.goto("/settings");
