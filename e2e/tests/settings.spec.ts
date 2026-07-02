@@ -15,11 +15,13 @@ test("인증 사용자는 설정 페이지에서 프로필을 본다", async ({ 
   await expect(page.getByLabel(MESSAGES.settings.name)).toHaveValue(E2E_CREDENTIALS.tenantName);
 });
 
-test("이름을 수정하면 에러 없이 저장된다(성공경로)", async ({ page, context }) => {
+test("이름을 수정하면 재조회에 반영된다(영속성)", async ({ page, context }) => {
   await loginAs(context);
   await page.goto("/settings");
 
-  await page.getByLabel(MESSAGES.settings.name).fill("박수정");
+  // 유니크 이름 — 토큰 스코프라 테스트별 격리. 서버 저장 후 리로드 재조회로 영속 검증.
+  const name = `박수정-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  await page.getByLabel(MESSAGES.settings.name).fill(name);
   const [res] = await Promise.all([
     page.waitForResponse(
       (r) => r.url().includes(API_ROUTES.profile) && r.request().method() === "PATCH",
@@ -27,9 +29,10 @@ test("이름을 수정하면 에러 없이 저장된다(성공경로)", async ({
     page.getByRole("button", { name: MESSAGES.settings.saveName }).click(),
   ]);
   expect(res.ok()).toBe(true);
-  // 성공경로 — 실패 문구가 뜨지 않고 설정 페이지에 머문다(무상태라 영구 반영은 검증 안 함).
-  await expect(page.getByText(MESSAGES.settings.updateFailed)).not.toBeVisible();
-  await expect(page).toHaveURL(/\/settings/);
+
+  // 리로드 = 서버 상태로부터 새로 렌더(타이핑 값이 아니라 저장된 값). 수정한 이름이 프리필된다.
+  await page.reload();
+  await expect(page.getByLabel(MESSAGES.settings.name)).toHaveValue(name);
 });
 
 test("비밀번호를 변경하면 성공 메시지를 보인다(성공경로)", async ({ page, context }) => {

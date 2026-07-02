@@ -50,3 +50,22 @@ test("모두 읽음을 누르면 전체 읽음이 처리된다(성공경로)", a
   expect(res.ok()).toBe(true);
   await expect(page.getByText(MESSAGES.notification.markFailed)).not.toBeVisible();
 });
+
+test("모두 읽음 후 리로드해도 미읽음 배지가 사라진다(영속성)", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto(PAGE_ROUTES.notifications);
+
+  // 초기 미읽음 1건 → 헤더 알림 벨에 배지 "1".
+  await expect(page.getByRole("link", { name: "알림" })).toContainText("1");
+
+  await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes(API_ROUTES.notificationsRead) && r.request().method() === "PATCH",
+    ),
+    page.getByRole("button", { name: MESSAGES.notification.markAll }).click(),
+  ]);
+
+  // 리로드 = 서버 unread-count 재조회. 읽음이 영속되었으면 0 → 배지가 사라진다.
+  await page.reload();
+  await expect(page.getByRole("link", { name: "알림" })).not.toContainText("1");
+});
