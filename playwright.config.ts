@@ -10,6 +10,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html", { open: "never" }], ["list"]] : "list",
+  // CI Linux 러너의 webkit이 느려 기본 5s expect가 reload+SSR·소켓 연결에 빠듯 → 10s로 상향.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: `http://localhost:${NEXT_PORT}`,
     trace: "on-first-retry",
