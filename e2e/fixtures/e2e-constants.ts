@@ -50,6 +50,11 @@ export const E2E_INVITE = {
   unitName: "101호",
 } as const;
 
+// 채팅 E2E 결합 상수(목 BE·목 WS·테스트가 공유).
+export const E2E_CHAT = {
+  roomId: "room-e2e",
+} as const;
+
 // 건물·호실·초대코드 발급 E2E 결합 상수(OWNER, 목 BE와 테스트가 공유).
 export const E2E_BUILDING = {
   id: "b-owner-e2e",
