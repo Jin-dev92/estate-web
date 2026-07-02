@@ -7,7 +7,10 @@ export function sessionCookie(token: string) {
     value: token,
     options: {
       httpOnly: true as const,
-      secure: process.env.NODE_ENV === "production",
+      // 실서비스(HTTPS)에선 secure. 단 E2E는 프로덕션 빌드를 http://localhost로 띄우는데
+      // webkit은 localhost에서도 secure 쿠키를 저장하지 않아(chromium/firefox는 예외 허용)
+      // 세션이 안 잡힌다. E2E_INSECURE_COOKIE=1일 때만 secure를 꺼 이 환경 아티팩트를 회피한다.
+      secure: process.env.NODE_ENV === "production" && process.env.E2E_INSECURE_COOKIE !== "1",
       sameSite: "lax" as const,
       path: "/",
       maxAge: 60 * 60, // access token 수명에 맞춰 후속 조정

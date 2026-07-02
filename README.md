@@ -49,6 +49,7 @@
 | 알림 센터 (목록 렌더 · 단건 읽음+딥링크 · 전체 읽음) | ✅ |
 | 채팅 (방 목록→진입 · start-chat 방생성 · 1:1 실시간 연결·전송→에코 · 비참가자 에러, 목 socket.io) | ✅ |
 | 폼 클라 검증 (가입 비번 8자 미만 · 초대코드 빈값 · 비번폼 현재비번 필수, 네트워크 전 차단) | ✅ |
+| 멀티브라우저 (chromium · firefox · webkit 3개 엔진에서 전 스위트 실행) | ✅ |
 | 목 BE 타입 drift 게이트 (`tsc --noEmit`로 `lib/api` 계약 변경 검출) | ✅ |
 
 ### 후속 백로그
@@ -59,7 +60,7 @@
 - [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
 - [ ] **채팅 E2E 확장**: 방 목록·진입·start-chat 방생성·실시간 연결·전송→에코·비참가자 에러는 커버. 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
 - [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
-- [ ] **멀티브라우저**: webkit · firefox 프로젝트 추가.
+- [x] **멀티브라우저**: chromium · firefox · webkit 프로젝트 추가 완료. webkit은 프로덕션 빌드를 http로 띄우면 secure 쿠키를 저장하지 않아(chromium/firefox는 localhost 예외 허용) 세션이 안 잡히므로, E2E에서만 `E2E_INSECURE_COOKIE=1`로 secure를 끈다(`lib/session.ts`, 실서비스 HTTPS는 영향 없음).
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
 
