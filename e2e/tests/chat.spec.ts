@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { MESSAGES } from "../../lib/messages";
-import { PAGE_ROUTES } from "../../lib/constants";
+import { PAGE_ROUTES, API_ROUTES } from "../../lib/constants";
 import { loginAs, loginAsOwner } from "../fixtures/auth";
 import { E2E_CHAT, E2E_BUILDING } from "../fixtures/e2e-constants";
 
@@ -37,5 +37,30 @@ test("채팅 목록에서 방을 열면 대화방으로 이동한다", async ({ 
   await expect(page.getByText(label)).toBeVisible();
 
   await page.getByText(label).click();
+  await expect(page).toHaveURL(new RegExp(`${PAGE_ROUTES.chatRoom(E2E_CHAT.roomId)}$`));
+});
+
+// A1: 비참가자 방 진입 → 목 WS가 CHAT_NOT_ROOM_PARTICIPANT emit → 에러 안내.
+test("비참가자 방에 들어가면 참가자 아님 안내를 본다", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto(PAGE_ROUTES.chatRoom(E2E_CHAT.forbiddenRoomId));
+
+  await expect(page.getByText(MESSAGES.chat.notParticipant)).toBeVisible();
+});
+
+// A2: TENANT는 채팅이 없으면(빈 목록) 활성 리스 건물주에게 문의를 시작해 방으로 이동.
+test("입주자는 채팅이 없을 때 건물주에게 문의를 시작해 방으로 이동한다", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto(PAGE_ROUTES.chat);
+
+  const start = page.getByRole("button", { name: MESSAGES.chat.startOwner });
+  await expect(start).toBeVisible();
+
+  await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes(API_ROUTES.chatRooms) && r.request().method() === "POST",
+    ),
+    start.click(),
+  ]);
   await expect(page).toHaveURL(new RegExp(`${PAGE_ROUTES.chatRoom(E2E_CHAT.roomId)}$`));
 });
