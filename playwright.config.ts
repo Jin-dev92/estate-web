@@ -25,13 +25,15 @@ export default defineConfig({
     {
       command: "pnpm e2e:mock-be",
       url: `http://localhost:${MOCK_BE_PORT}/health`,
-      reuseExistingServer: !process.env.CI,
+      // 항상 새로 기동한다(CI와 동일). 목 BE가 상태있는(게시판) 목이라, 이전 실행에서
+      // 남은 stale 서버를 재사용하면 옛 상태를 답해 영속성 단언이 timeout 난다.
+      reuseExistingServer: false,
       timeout: 30_000,
     },
     {
       command: "pnpm e2e:mock-ws",
       url: `http://localhost:${MOCK_WS_PORT}/health`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 30_000,
     },
     {
