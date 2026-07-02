@@ -59,6 +59,8 @@ export const E2E_INVITE = {
 // 채팅 E2E 결합 상수(목 BE·목 WS·테스트가 공유).
 export const E2E_CHAT = {
   roomId: "room-e2e",
+  // 이 방에 join하면 목 WS가 CHAT_NOT_ROOM_PARTICIPANT 에러를 emit한다(비참가자 분기).
+  forbiddenRoomId: "room-forbidden-e2e",
 } as const;
 
 // 건물·호실·초대코드 발급 E2E 결합 상수(OWNER, 목 BE와 테스트가 공유).

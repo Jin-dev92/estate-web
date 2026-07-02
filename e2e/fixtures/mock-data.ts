@@ -8,6 +8,7 @@ import type {
   Building,
   Unit,
   ChatRoom,
+  Lease,
   backendSignup,
   backendPreviewInvite,
   backendRedeemInvite,
@@ -40,6 +41,18 @@ export function mockMe(): Me {
 // OWNER 세션(대시보드 OWNER 홈 렌더 검증) — /auth/me가 owner 토큰일 때 반환.
 export function mockOwnerMe(): Me {
   return { id: "u-owner-e2e", email: E2E_SIGNUP.ownerEmail, role: ROLE.OWNER };
+}
+
+// 입주자 활성 리스(GET /me/leases) — start-chat가 활성 건물을 잡도록 buildingId 포함.
+export function mockLease(): Lease {
+  return {
+    id: "lease-e2e",
+    unitId: E2E_BUILDING.unitId,
+    status: LEASE_STATUS.ACTIVE,
+    unitName: E2E_BUILDING.unitName,
+    buildingName: E2E_BUILDING.name,
+    buildingId: E2E_BUILDING.id,
+  };
 }
 
 // 채팅 방 목록(GET /chat/rooms) — buildingId를 E2E_BUILDING에 맞춰 OWNER 목록 라벨이

@@ -17,6 +17,7 @@ import {
   mockUnit,
   mockIssuedInvite,
   mockChatRoom,
+  mockLease,
 } from "../fixtures/mock-data";
 
 const PORT = 3099;
@@ -78,9 +79,13 @@ const server = createServer(async (req, res) => {
   // 대시보드 SSR이 부르는 읽기(GET) — 안전 기본값.
   // 메서드 가드로 읽기 경로가 다른 메서드까지 200을 반환하는 drift를 막는다.
   if (method === "GET") {
-    if (url === "/me/leases") return send(res, 200, []);
+    if (url === "/me/leases") return send(res, 200, [mockLease()]);
     if (url === "/buildings") return send(res, 200, [mockBuilding()]);
-    if (url === "/chat/rooms") return send(res, 200, [mockChatRoom()]);
+    // 방 목록: OWNER는 방 1건(목록 렌더), TENANT는 빈 목록(StartChatButton→start-chat).
+    if (url === "/chat/rooms") {
+      const owner = (req.headers.authorization ?? "").includes(E2E_OWNER_TOKEN);
+      return send(res, 200, owner ? [mockChatRoom()] : []);
+    }
     // 방 히스토리(GET /chat/rooms/:id/messages) — 실시간 에코만 테스트하므로 빈 히스토리.
     if (/^\/chat\/rooms\/[^/]+\/messages$/.test(url)) return send(res, 200, []);
     if (url === "/notifications/unread-count") return send(res, 200, mockUnreadCount());
@@ -139,6 +144,11 @@ const server = createServer(async (req, res) => {
   // 초대코드 발급(POST /units/:unitId/invite-codes, OWNER).
   if (method === "POST" && url.startsWith("/units/") && url.endsWith("/invite-codes")) {
     return send(res, 201, mockIssuedInvite());
+  }
+
+  // 채팅방 생성/조회(POST /chat/rooms, start-chat) — 방을 반환해 클라가 방으로 이동한다.
+  if (method === "POST" && url === "/chat/rooms") {
+    return send(res, 201, mockChatRoom());
   }
 
   // 그 외는 404(목이 모르는 경로 — 테스트가 새 의존을 추가하면 여기 추가).
