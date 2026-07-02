@@ -9,6 +9,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // CI 러너는 코어가 적어 3브라우저 fullyParallel이 경합 → 간헐 stall(테스트가 30s 기본
+  // 타임아웃에 걸림). 워커를 2로 낮춰 경합을 줄이고, 콜드스타트 흡수용으로 테스트 타임아웃 상향.
+  workers: process.env.CI ? 2 : undefined,
+  timeout: process.env.CI ? 45_000 : 30_000,
   reporter: process.env.CI ? [["html", { open: "never" }], ["list"]] : "list",
   // CI Linux 러너의 webkit이 느려 기본 5s expect가 reload+SSR·소켓 연결에 빠듯 → 10s로 상향.
   expect: { timeout: 10_000 },
