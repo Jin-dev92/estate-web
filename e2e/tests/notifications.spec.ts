@@ -67,5 +67,6 @@ test("모두 읽음 후 리로드해도 미읽음 배지가 사라진다(영속�
 
   // 리로드 = 서버 unread-count 재조회. 읽음이 영속되었으면 0 → 배지가 사라진다.
   await page.reload();
-  await expect(page.getByRole("link", { name: "알림" })).not.toContainText("1");
+  // reload+SSR은 CI webkit에서 느려 전역 10s보다 여유를 준다.
+  await expect(page.getByRole("link", { name: "알림" })).not.toContainText("1", { timeout: 20_000 });
 });

@@ -38,6 +38,8 @@
 
 목 BE(HTTP, `BACKEND_URL`) + 목 socket.io WS 서버 기반 결정론적 E2E. 인증은 `loginAs`/`loginAsOwner` prefill 픽스처(세션 쿠키 주입, 토큰으로 OWNER/TENANT 역할 분기)로 시작하고, 셀렉터는 시멘틱만, flaky는 burn-in으로 차단한다. `pnpm e2e`가 목 BE·목 WS·Next(프로덕션 빌드)를 자동 기동해 **chromium·firefox·webkit 3개 엔진**에서 전 스위트를 실행한다. 게시판은 상태있는 목으로 작성→반영(영속성)까지 검증하고, 목 응답은 `lib/api` 타입에 묶여(**drift 게이트**) 계약 변경을 `typecheck`로 잡는다. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
 
+> CI 참고: 제약된 러너에서 webkit이 첫 네비게이션/reload에 간헐적 콜드스타트 지연을 겪어 일부 영속성 테스트가 1차 시도에서 stall할 수 있다. `retries: 2`(CI)로 흡수하므로 잡은 GREEN이며, 로그의 복구된 `✘`는 하드 실패가 아니다. 빈도는 `workers` 축소·타임아웃 상향으로 낮췄다(`playwright.config.ts`).
+
 | 커버리지 | 상태 |
 |---|---|
 | 로그인 스모크 (성공→대시보드 / 실패→에러) | ✅ |
@@ -52,13 +54,13 @@
 | 멀티브라우저 (chromium · firefox · webkit 3개 엔진에서 전 스위트 실행) | ✅ |
 | 목 BE 타입 drift 게이트 (`tsc --noEmit`로 `lib/api` 계약 변경 검출) | ✅ |
 
-### 후속 백로그
+### 후속 백로그 (남은 작업)
+
+> 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`)은 위 커버리지 표에 반영. 아래는 **남은 작업**만.
 
 - [ ] **테스트 typecheck 정비**: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
-- [x] **`MESSAGES.auth.login` 신설 완료**: 로그인 버튼 카피를 `MESSAGES.auth.login` 단일 출처화(로그인 페이지·unit test·E2E 스펙에서 `"로그인"` 리터럴 제거).
-- [x] **상태있는 목 — 프로필·알림 영속성(후속 A) 완료**: 게시판(append)에 이어 프로필 이름 수정·알림 전체 읽음도 영속성 단언 커버. `loginAs`가 테스트별 유니크 토큰을 주입하고 목이 토큰별 버킷으로 상태를 격리해 병렬/3브라우저 안전(스펙: `docs/test/e2e-stateful-mock-spec.md` 옵션 A). 전체 87/87·burn-in 435/435.
 - [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
-- [ ] **채팅 E2E 확장**: 방 목록·진입·start-chat 방생성·실시간 연결·전송→에코·비참가자 에러는 커버. 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
+- [ ] **채팅 E2E 확장(잔여)**: 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)만 미커버 — 방 목록·진입·start-chat·실시간 연결·전송→에코·비참가자 에러는 커버 완료(스펙: `docs/test/e2e-chat-spec.md`).
 - [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.

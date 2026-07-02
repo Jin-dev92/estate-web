@@ -17,7 +17,8 @@ test("방에 연결되면 메시지를 보내고 에코를 받는다", async ({ 
   // 입력이 채워진 뒤 전송 버튼이 활성화되면 = socket 연결됨(전송은 connected까지 비활성).
   const content = "E2E 실시간 메시지";
   await input.fill(content);
-  await expect(sendButton).toBeEnabled();
+  // 소켓 연결 대기 — CI webkit에서 socket.io 핸드셰이크가 느려 전역 10s보다 여유를 준다.
+  await expect(sendButton).toBeEnabled({ timeout: 15_000 });
 
   // 전송 → 목 WS 에코 → 메시지 버블이 목록에 나타난다.
   await sendButton.click();
