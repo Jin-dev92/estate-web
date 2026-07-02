@@ -74,3 +74,27 @@ test("유효하지 않은 초대코드는 에러를 보이고 코드 단계에 �
   await expect(page.getByText(MESSAGES.invite.invalid)).toBeVisible();
   await expect(page.getByRole("heading", { name: "초대코드 입력" })).toBeVisible();
 });
+
+// 폼 클라이언트 검증(zod) — 네트워크 호출 전 차단되는지.
+test("건물주 가입 폼은 비밀번호가 8자 미만이면 검증 에러를 보이고 이동하지 않는다", async ({ page }) => {
+  await page.goto(PAGE_ROUTES.signup);
+  await page.getByRole("link", { name: "건물주로 시작" }).click();
+
+  await page.getByLabel("이름").fill(E2E_SIGNUP.ownerName);
+  await page.getByLabel("이메일").fill(E2E_SIGNUP.ownerEmail);
+  await page.getByLabel("비밀번호").fill("1234"); // 8자 미만
+  await page.getByRole("button", { name: "가입하고 시작하기" }).click();
+
+  await expect(page.getByText(MESSAGES.form.signupInvalid)).toBeVisible();
+  await expect(page).toHaveURL(/\/signup\/owner$/);
+});
+
+test("입주자 초대코드를 비우고 다음을 누르면 검증 에러를 보인다", async ({ page }) => {
+  await page.goto(PAGE_ROUTES.signup);
+  await page.getByRole("link", { name: "입주자로 시작" }).click();
+
+  await page.getByRole("button", { name: "다음" }).click();
+
+  await expect(page.getByText(MESSAGES.invite.required)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "초대코드 입력" })).toBeVisible();
+});
