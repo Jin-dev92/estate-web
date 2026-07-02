@@ -49,3 +49,15 @@ export const E2E_INVITE = {
   buildingName: "터전빌라",
   unitName: "101호",
 } as const;
+
+// 건물·호실·초대코드 발급 E2E 결합 상수(OWNER, 목 BE와 테스트가 공유).
+export const E2E_BUILDING = {
+  id: "b-owner-e2e",
+  name: "터전오너빌딩",
+  address: "서울시 터전구 1-2",
+  unitId: "unit-owner-e2e",
+  unitName: "201호",
+  floor: 2,
+  issuedCode: "OWNER1CODE",
+  expiresInSec: 600,
+} as const;
