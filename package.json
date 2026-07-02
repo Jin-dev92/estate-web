@@ -12,6 +12,7 @@
     "e2e:ui": "playwright test --ui",
     "e2e:burn": "playwright test --repeat-each=5",
     "e2e:mock-be": "tsx e2e/mock-be/server.ts",
+    "e2e:mock-ws": "tsx e2e/mock-ws/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -37,6 +38,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jsdom": "^29.1.1",
+    "socket.io": "^4.8.3",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5",
