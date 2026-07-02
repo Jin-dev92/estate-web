@@ -1,7 +1,8 @@
 import { createServer } from "node:http";
-import { E2E_CREDENTIALS, E2E_SESSION_TOKEN } from "../fixtures/e2e-constants";
+import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_OWNER_TOKEN } from "../fixtures/e2e-constants";
 import {
   mockMe,
+  mockOwnerMe,
   mockProfile,
   mockPost,
   mockPostDetail,
@@ -68,7 +69,9 @@ const server = createServer(async (req, res) => {
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
   if (url === "/auth/me" && method === "GET") {
-    return send(res, 200, mockMe());
+    // 세션 토큰으로 역할 분기 — owner 토큰이면 OWNER, 그 외 TENANT(기본).
+    const owner = (req.headers.authorization ?? "").includes(E2E_OWNER_TOKEN);
+    return send(res, 200, owner ? mockOwnerMe() : mockMe());
   }
 
   // 대시보드 SSR이 부르는 읽기(GET) — 안전 기본값.

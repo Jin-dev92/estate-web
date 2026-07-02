@@ -14,6 +14,10 @@ export const E2E_CREDENTIALS = {
 // server.ts(발급)와 fixtures/auth.ts(주입) 두 곳이 공유하므로 단일 출처로 둔다.
 export const E2E_SESSION_TOKEN = "e2e-token";
 
+// OWNER 세션 토큰 — 목 /auth/me가 Authorization에서 이 토큰을 보면 OWNER 역할을 반환한다
+// (대시보드 OWNER 홈 렌더 검증용). loginAsOwner 픽스처가 주입한다.
+export const E2E_OWNER_TOKEN = "e2e-owner-token";
+
 // 게시판 E2E 결합 상수(목 BE와 테스트가 공유).
 export const E2E_BOARD = {
   buildingId: "b-e2e",
