@@ -36,7 +36,7 @@
 
 ## E2E 테스트 (Playwright)
 
-목 BE 서버(`BACKEND_URL`) 기반 결정론적 E2E. `loginAs` prefill 픽스처로 인증 상태 시작, 시멘틱 셀렉터·burn-in으로 flaky 차단. `pnpm e2e`로 목 BE + Next를 자동 기동. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
+목 BE(HTTP, `BACKEND_URL`) + 목 socket.io WS 서버 기반 결정론적 E2E. 인증은 `loginAs`/`loginAsOwner` prefill 픽스처(세션 쿠키 주입, 토큰으로 OWNER/TENANT 역할 분기)로 시작하고, 셀렉터는 시멘틱만, flaky는 burn-in으로 차단한다. `pnpm e2e`가 목 BE·목 WS·Next(프로덕션 빌드)를 자동 기동해 **chromium·firefox·webkit 3개 엔진**에서 전 스위트를 실행한다. 게시판은 상태있는 목으로 작성→반영(영속성)까지 검증하고, 목 응답은 `lib/api` 타입에 묶여(**drift 게이트**) 계약 변경을 `typecheck`로 잡는다. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
 
 | 커버리지 | 상태 |
 |---|---|
@@ -60,7 +60,6 @@
 - [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
 - [ ] **채팅 E2E 확장**: 방 목록·진입·start-chat 방생성·실시간 연결·전송→에코·비참가자 에러는 커버. 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
 - [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
-- [x] **멀티브라우저**: chromium · firefox · webkit 프로젝트 추가 완료. webkit은 프로덕션 빌드를 http로 띄우면 secure 쿠키를 저장하지 않아(chromium/firefox는 localhost 예외 허용) 세션이 안 잡히므로, E2E에서만 `E2E_INSECURE_COOKIE=1`로 secure를 끈다(`lib/session.ts`, 실서비스 HTTPS는 영향 없음).
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
 
