@@ -107,6 +107,16 @@ const server = createServer(async (req, res) => {
     return send(res, 200, mockProfile());
   }
 
+  // 비밀번호 변경(PATCH /auth/password) — 현재 비밀번호가 센티넬이면 401(불일치), 그 외 성공.
+  // message는 FE errorMap이 MESSAGES.settings.wrongCurrentPassword로 덮어쓴다.
+  if (method === "PATCH" && url === "/auth/password") {
+    const body = await readJson(req);
+    if (body.currentPassword === E2E_CREDENTIALS.wrongPassword) {
+      return send(res, 401, { statusCode: 401, code: "AUTH_INVALID_CREDENTIALS", message: "현재 비밀번호가 일치하지 않습니다." });
+    }
+    return send(res, 200, { ok: true });
+  }
+
   // 게시글 작성(POST /buildings/:id/posts).
   if (method === "POST" && url.startsWith("/buildings/") && url.endsWith("/posts")) {
     return send(res, 201, mockCreatedPost());
