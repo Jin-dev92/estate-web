@@ -32,6 +32,33 @@ test("이름을 수정하면 에러 없이 저장된다(성공경로)", async ({
   await expect(page).toHaveURL(/\/settings/);
 });
 
+test("비밀번호를 변경하면 성공 메시지를 보인다(성공경로)", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto("/settings");
+
+  await page.getByLabel(MESSAGES.settings.currentPassword).fill(E2E_CREDENTIALS.password);
+  await page.getByLabel(MESSAGES.settings.newPassword).fill("newpassword123");
+  const [res] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes(API_ROUTES.profilePassword) && r.request().method() === "PATCH",
+    ),
+    page.getByRole("button", { name: MESSAGES.settings.changePassword }).click(),
+  ]);
+  expect(res.ok()).toBe(true);
+  await expect(page.getByText(MESSAGES.settings.passwordChanged)).toBeVisible();
+});
+
+test("현재 비밀번호가 틀리면 에러를 보인다", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto("/settings");
+
+  await page.getByLabel(MESSAGES.settings.currentPassword).fill(E2E_CREDENTIALS.wrongPassword);
+  await page.getByLabel(MESSAGES.settings.newPassword).fill("newpassword123");
+  await page.getByRole("button", { name: MESSAGES.settings.changePassword }).click();
+
+  await expect(page.getByText(MESSAGES.settings.wrongCurrentPassword)).toBeVisible();
+});
+
 test("로그아웃하면 로그인 페이지로 이동한다", async ({ page, context }) => {
   await loginAs(context);
   await page.goto("/settings");

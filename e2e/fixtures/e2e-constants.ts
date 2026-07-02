@@ -4,6 +4,8 @@ export const E2E_CREDENTIALS = {
   password: "password123",
   // 목 BE가 이 이메일이면 401을 반환한다(로그인 실패 경로 트리거).
   failEmail: "fail@e2e.test",
+  // 목 BE가 비밀번호 변경 시 이 현재 비밀번호면 401을 반환한다(현재 비밀번호 불일치 트리거).
+  wrongPassword: "wrong-current-pw",
   // 설정 페이지 프로필 표시 이름(렌더·이름 필드 프리필 검증용).
   tenantName: "김입주",
 } as const;
