@@ -35,6 +35,11 @@ export function mockMe(): Me {
   return { id: "u-e2e", email: E2E_CREDENTIALS.tenantEmail, role: ROLE.TENANT };
 }
 
+// OWNER 세션(대시보드 OWNER 홈 렌더 검증) — /auth/me가 owner 토큰일 때 반환.
+export function mockOwnerMe(): Me {
+  return { id: "u-owner-e2e", email: E2E_SIGNUP.ownerEmail, role: ROLE.OWNER };
+}
+
 export function mockProfile(): Profile {
   return {
     id: "u-e2e",
