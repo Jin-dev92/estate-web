@@ -32,7 +32,8 @@ test("이름을 수정하면 재조회에 반영된다(영속성)", async ({ pag
 
   // 리로드 = 서버 상태로부터 새로 렌더(타이핑 값이 아니라 저장된 값). 수정한 이름이 프리필된다.
   await page.reload();
-  await expect(page.getByLabel(MESSAGES.settings.name)).toHaveValue(name);
+  // reload+SSR은 CI webkit에서 느려 전역 10s보다 여유를 준다.
+  await expect(page.getByLabel(MESSAGES.settings.name)).toHaveValue(name, { timeout: 20_000 });
 });
 
 test("비밀번호를 변경하면 성공 메시지를 보인다(성공경로)", async ({ page, context }) => {
