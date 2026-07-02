@@ -4,10 +4,10 @@ import {
   mockMe,
   mockOwnerMe,
   mockProfile,
-  mockPost,
-  mockPostDetail,
-  mockCreatedPost,
-  mockCreatedComment,
+  listPosts,
+  getPostDetail,
+  addPost,
+  addComment,
   mockNotifications,
   mockUnreadCount,
   mockSignup,
@@ -92,14 +92,15 @@ const server = createServer(async (req, res) => {
     if (url === "/notifications") return send(res, 200, mockNotifications());
     // 설정 SSR(backendProfile)이 부르는 프로필 조회.
     if (url === "/auth/profile") return send(res, 200, mockProfile());
-    // 게시판 목록(GET /buildings/:id/posts).
+    // 게시판 목록(GET /buildings/:id/posts) — 상태있는 목: 작성 글이 반영된다.
     if (url.startsWith("/buildings/") && url.endsWith("/posts"))
-      return send(res, 200, [mockPost()]);
+      return send(res, 200, listPosts());
     // 호실 목록(GET /buildings/:id/units, OWNER 건물 상세).
     if (url.startsWith("/buildings/") && url.endsWith("/units"))
       return send(res, 200, [mockUnit()]);
-    // 게시글 상세(GET /posts/:id) — 댓글 없음.
-    if (/^\/posts\/[^/]+$/.test(url)) return send(res, 200, mockPostDetail());
+    // 게시글 상세(GET /posts/:id) — 상태있는 목: 작성 댓글이 반영된다.
+    const postMatch = url.match(/^\/posts\/([^/]+)$/);
+    if (postMatch) return send(res, 200, getPostDetail(postMatch[1]));
     // 초대코드 미리보기(GET /invite-codes/:code/preview) — 공개(미인증).
     const preview = url.match(/^\/invite-codes\/([^/]+)\/preview$/);
     if (preview) return send(res, 200, mockInvitePreview(decodeURIComponent(preview[1])));
@@ -126,14 +127,17 @@ const server = createServer(async (req, res) => {
     return send(res, 200, { ok: true });
   }
 
-  // 게시글 작성(POST /buildings/:id/posts).
+  // 게시글 작성(POST /buildings/:id/posts) — 저장 후 목록 GET에 반영된다.
   if (method === "POST" && url.startsWith("/buildings/") && url.endsWith("/posts")) {
-    return send(res, 201, mockCreatedPost());
+    const body = await readJson(req);
+    return send(res, 201, addPost(String(body.title ?? ""), String(body.content ?? "")));
   }
 
-  // 댓글 작성(POST /posts/:id/comments).
-  if (method === "POST" && url.startsWith("/posts/") && url.endsWith("/comments")) {
-    return send(res, 201, mockCreatedComment());
+  // 댓글 작성(POST /posts/:id/comments) — 저장 후 상세 GET에 반영된다.
+  const commentMatch = url.match(/^\/posts\/([^/]+)\/comments$/);
+  if (method === "POST" && commentMatch) {
+    const body = await readJson(req);
+    return send(res, 201, addComment(commentMatch[1], String(body.content ?? "")));
   }
 
   // 초대 수락/입주(POST /invite-codes/redeem) — 가입 후 자동 로그인 토큰으로 호출된다.
