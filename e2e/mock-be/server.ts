@@ -7,6 +7,8 @@ import {
   mockPostDetail,
   mockCreatedPost,
   mockCreatedComment,
+  mockNotifications,
+  mockUnreadCount,
 } from "../fixtures/mock-data";
 
 const PORT = 3099;
@@ -63,8 +65,8 @@ const server = createServer(async (req, res) => {
     if (url === "/me/leases") return send(res, 200, []);
     if (url === "/buildings") return send(res, 200, []);
     if (url === "/chat/rooms") return send(res, 200, []);
-    if (url === "/notifications/unread-count") return send(res, 200, { count: 0 });
-    if (url === "/notifications") return send(res, 200, []);
+    if (url === "/notifications/unread-count") return send(res, 200, mockUnreadCount());
+    if (url === "/notifications") return send(res, 200, mockNotifications());
     // 설정 SSR(backendProfile)이 부르는 프로필 조회.
     if (url === "/auth/profile") return send(res, 200, mockProfile());
     // 게시판 목록(GET /buildings/:id/posts).

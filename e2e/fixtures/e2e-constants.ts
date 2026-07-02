@@ -19,3 +19,15 @@ export const E2E_BOARD = {
   postTitle: "E2E 공지 제목",
   postBody: "E2E 본문 내용입니다.",
 } as const;
+
+// 알림 E2E 결합 상수(목 BE와 테스트가 공유).
+// 미읽음 알림은 PostAdded 타입 + 게시판 결합키(buildingId/entityId)를 물려
+// 클릭 시 딥링크가 게시글 상세(/board/b-e2e/p-e2e)로 향하게 한다.
+export const E2E_NOTIFICATION = {
+  unreadId: "n-unread-e2e",
+  unreadTitle: "새 공지가 등록됐어요",
+  unreadBody: "건물 게시판에 새 글이 올라왔어요.",
+  readId: "n-read-e2e",
+  readTitle: "댓글이 달렸어요",
+  readBody: "내 글에 새 댓글이 달렸어요.",
+} as const;
