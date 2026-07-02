@@ -55,7 +55,7 @@
 ### 후속 백로그
 
 - [ ] **테스트 typecheck 정비**: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
-- [ ] **`MESSAGES.auth.login` 신설**: 로그인 버튼 카피 단일 출처화(로그인 페이지·E2E 스펙에서 `"로그인"` 리터럴 제거).
+- [x] **`MESSAGES.auth.login` 신설 완료**: 로그인 버튼 카피를 `MESSAGES.auth.login` 단일 출처화(로그인 페이지·unit test·E2E 스펙에서 `"로그인"` 리터럴 제거).
 - [x] **상태있는 목 — 프로필·알림 영속성(후속 A) 완료**: 게시판(append)에 이어 프로필 이름 수정·알림 전체 읽음도 영속성 단언 커버. `loginAs`가 테스트별 유니크 토큰을 주입하고 목이 토큰별 버킷으로 상태를 격리해 병렬/3브라우저 안전(스펙: `docs/test/e2e-stateful-mock-spec.md` 옵션 A). 전체 87/87·burn-in 435/435.
 - [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
 - [ ] **채팅 E2E 확장**: 방 목록·진입·start-chat 방생성·실시간 연결·전송→에코·비참가자 에러는 커버. 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
