@@ -86,16 +86,48 @@ export function mockPost(): Post {
   };
 }
 
-export function mockPostDetail(): PostDetail {
-  return { ...mockPost(), content: E2E_BOARD.postBody, comments: [] };
+// ── 상태있는 게시판(B1) ─────────────────────────────────────────────────
+// 작성 글/댓글이 목록·상세에 반영되는지 영속성 단언용. 병렬(3브라우저) 공유 안전:
+// append + "내 것이 보인다"(존재) 단언만 지원하고 개수·부재는 단언하지 않는다.
+// 목 BE 단일 프로세스의 모듈 상태로 테스트 런 동안 유지된다.
+const boardPosts: Post[] = [mockPost()];
+const boardDetails = new Map<string, { content: string; comments: Comment[] }>([
+  [E2E_BOARD.postId, { content: E2E_BOARD.postBody, comments: [] }],
+]);
+
+function uid(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function mockCreatedPost(): Post {
-  return { id: "p-new-e2e", category: POST_CATEGORY.FREE, title: E2E_BOARD.postTitle, authorId: "u-e2e" };
+export function listPosts(): Post[] {
+  return boardPosts;
 }
 
-export function mockCreatedComment(): Comment {
-  return { id: "c-new-e2e", authorId: "u-e2e", content: "e2e-comment" };
+export function addPost(title: string, content: string): Post {
+  const post: Post = {
+    id: uid("p"),
+    category: POST_CATEGORY.FREE,
+    title,
+    authorId: "u-e2e",
+    createdAt: new Date().toISOString(),
+  };
+  boardPosts.unshift(post);
+  boardDetails.set(post.id, { content, comments: [] });
+  return post;
+}
+
+export function getPostDetail(id: string): PostDetail {
+  const base = boardPosts.find((p) => p.id === id) ?? mockPost();
+  const d = boardDetails.get(id) ?? { content: E2E_BOARD.postBody, comments: [] };
+  return { ...base, id, content: d.content, comments: d.comments };
+}
+
+export function addComment(postId: string, content: string): Comment {
+  const comment: Comment = { id: uid("c"), authorId: "u-e2e", content };
+  const d = boardDetails.get(postId) ?? { content: E2E_BOARD.postBody, comments: [] };
+  d.comments.push(comment);
+  boardDetails.set(postId, d);
+  return comment;
 }
 
 // 알림 센터 목록 — 미읽음(PostAdded) + 읽음(CommentAdded) 두 건.

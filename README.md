@@ -36,7 +36,7 @@
 
 ## E2E 테스트 (Playwright)
 
-목 BE 서버(`BACKEND_URL`) 기반 결정론적 E2E. `loginAs` prefill 픽스처로 인증 상태 시작, 시멘틱 셀렉터·burn-in으로 flaky 차단. `pnpm e2e`로 목 BE + Next를 자동 기동. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
+목 BE(HTTP, `BACKEND_URL`) + 목 socket.io WS 서버 기반 결정론적 E2E. 인증은 `loginAs`/`loginAsOwner` prefill 픽스처(세션 쿠키 주입, 토큰으로 OWNER/TENANT 역할 분기)로 시작하고, 셀렉터는 시멘틱만, flaky는 burn-in으로 차단한다. `pnpm e2e`가 목 BE·목 WS·Next(프로덕션 빌드)를 자동 기동해 **chromium·firefox·webkit 3개 엔진**에서 전 스위트를 실행한다. 게시판은 상태있는 목으로 작성→반영(영속성)까지 검증하고, 목 응답은 `lib/api` 타입에 묶여(**drift 게이트**) 계약 변경을 `typecheck`로 잡는다. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
 
 | 커버리지 | 상태 |
 |---|---|
@@ -45,7 +45,7 @@
 | 대시보드 홈 (TENANT '내 계약' · OWNER '내 건물'+보유 건물, 역할별 렌더) | ✅ |
 | 설정 (프로필 렌더 · 이름 수정 · 비밀번호 변경 성공/현재 비밀번호 불일치 · 로그아웃) | ✅ |
 | 건물·호실 (OWNER: 건물 목록→상세 호실 · 초대코드 발급→코드 노출) | ✅ |
-| 게시판 (목록 · 상세 · 글/댓글 작성) | ✅ |
+| 게시판 (목록 · 상세 · 글/댓글 작성→목록·상세 반영 영속성, 상태있는 목) | ✅ |
 | 알림 센터 (목록 렌더 · 단건 읽음+딥링크 · 전체 읽음) | ✅ |
 | 채팅 (방 목록→진입 · start-chat 방생성 · 1:1 실시간 연결·전송→에코 · 비참가자 에러, 목 socket.io) | ✅ |
 | 폼 클라 검증 (가입 비번 8자 미만 · 초대코드 빈값 · 비번폼 현재비번 필수, 네트워크 전 차단) | ✅ |
@@ -56,11 +56,10 @@
 
 - [ ] **테스트 typecheck 정비**: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
 - [ ] **`MESSAGES.auth.login` 신설**: 로그인 버튼 카피 단일 출처화(로그인 페이지·E2E 스펙에서 `"로그인"` 리터럴 제거).
-- [ ] **상태있는 목 옵션**: 작성 글/댓글·프로필 수정·알림 읽음이 목록에 반영되는지 영속성 단언(현재 무상태라 성공경로 스모크만).
+- [ ] **상태있는 목 — 프로필·알림 영속성(후속 A)**: 게시판(글/댓글→반영)은 상태있는 목으로 커버 완료(append+존재 단언이라 병렬 안전). 프로필 수정·알림 읽음은 단일값/초기상태 전제라 병렬 격리(테스트별 유니크 토큰 스코프)가 필요 → `loginAs` 변경 리스크가 있어 후속으로 분리(스펙: `docs/test/e2e-stateful-mock-spec.md`).
 - [ ] **drift 게이트 확장**: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
 - [ ] **채팅 E2E 확장**: 방 목록·진입·start-chat 방생성·실시간 연결·전송→에코·비참가자 에러는 커버. 재연결/`connect_error`·멀티유저 수신(상대가 보낸 메시지)은 미커버(스펙: `docs/test/e2e-chat-spec.md`).
 - [ ] **공식 에이전트 도입 검토**: Playwright Planner/Generator/Healer(`init-agents`).
-- [x] **멀티브라우저**: chromium · firefox · webkit 프로젝트 추가 완료. webkit은 프로덕션 빌드를 http로 띄우면 secure 쿠키를 저장하지 않아(chromium/firefox는 localhost 예외 허용) 세션이 안 잡히므로, E2E에서만 `E2E_INSECURE_COOKIE=1`로 secure를 끈다(`lib/session.ts`, 실서비스 HTTPS는 영향 없음).
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
 
