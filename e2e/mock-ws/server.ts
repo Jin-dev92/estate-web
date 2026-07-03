@@ -20,6 +20,18 @@ const httpServer = createServer((req, res) => {
 
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
+// 핸드셰이크 단계 인증 게이트. 이 시점엔 아직 roomId를 모르므로(연결 후 join으로 옴)
+// token만으로 판단한다. next(new Error(...))를 호출하면 클라이언트에 connect_error가 발생하고
+// connect/join은 전혀 일어나지 않는다.
+io.use((socket, next) => {
+  const token = String(socket.handshake.auth?.token ?? "");
+  if (token.startsWith(E2E_CHAT.wsConnectErrorTokenBase)) {
+    next(new Error("connect_error"));
+    return;
+  }
+  next();
+});
+
 io.on("connection", (socket) => {
   socket.on("join", (payload: { roomId: string }) => {
     // 비참가자 방이면 error emit(클라 → MESSAGES.chat.notParticipant). 그 외엔 ack 불필요.

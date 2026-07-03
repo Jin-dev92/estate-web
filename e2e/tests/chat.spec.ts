@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { MESSAGES } from "../../lib/messages";
 import { PAGE_ROUTES, API_ROUTES } from "../../lib/constants";
-import { loginAs, loginAsOwner } from "../fixtures/auth";
+import { loginAs, loginAsOwner, loginAsWsConnectError } from "../fixtures/auth";
 import { E2E_CHAT, E2E_BUILDING } from "../fixtures/e2e-constants";
 
 // 1:1 실시간 채팅 happy-path. 목 WS(:3098)가 보낸 메시지를 에코한다.
@@ -64,4 +64,12 @@ test("입주자는 채팅이 없을 때 건물주에게 문의를 시작해 방�
     start.click(),
   ]);
   await expect(page).toHaveURL(new RegExp(`${PAGE_ROUTES.chatRoom(E2E_CHAT.roomId)}$`));
+});
+
+// C1: 전용 토큰으로 접속하면 목 WS가 핸드셰이크 단계에서 연결을 거부한다.
+test("연결이 거부되면 연결 실패 안내를 본다", async ({ page, context }) => {
+  await loginAsWsConnectError(context);
+  await page.goto(PAGE_ROUTES.chatRoom(E2E_CHAT.roomId));
+
+  await expect(page.getByText(MESSAGES.chat.connectFailed)).toBeVisible();
 });
