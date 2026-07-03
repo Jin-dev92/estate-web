@@ -230,3 +230,13 @@ String(field ?? "").trim()
 
 ## 한계
 - 목 BE라 실 BE 계약 불일치는 못 잡는다(각 레포 단위/통합 테스트 담당). E2E는 FE 컴포넌트 경계·플로우 회귀에 집중.
+
+## Playwright 공식 에이전트 (시험 도입)
+
+`npx playwright init-agents --loop=claude --prompts` 생성물 — Planner/Generator/Healer 서브에이전트(`.claude/agents/`), `playwright-test` MCP(`.mcp.json`), 프롬프트(`.claude/prompts/`). 배경·판단 근거는 `docs/test/playwright-agents-review.md`.
+
+- **시드**: `e2e/tests/seed.spec.ts` — 에이전트가 환경 셋업(loginAs 인증)을 배우는 본보기. 셋업 규약이 바뀌면 시드도 갱신한다.
+- **Healer 결과물은 사람이 PR 리뷰로 확인 필수.** Healer가 넣는 `test.fixme()`(skip 처리)는 머지 금지 — "머지 전 수정" 원칙 유지.
+- **에이전트 생성물도 위 규칙(flaky 차단) 전부 적용**: 시멘틱 셀렉터·하드 대기 금지·burn-in·`MESSAGES`/`E2E_*` 단일출처. 리터럴이 보이면 상수화로 고쳐서 머지한다.
+- **테스트 계획 md는 예외적으로 루트 `specs/`에 둔다**(Planner 저장 위치가 하드코딩 — "문서는 docs/만" 규칙의 유일한 예외).
+- 시험 도입 상태: Healer(flaky 수리)·Generator(신규 커버리지 1건) 시범 사용 후 유지/확대/철회를 판단한다.
