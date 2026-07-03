@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_OWNER_TOKEN } from "../fixtures/e2e-constants";
+import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_OWNER_TOKEN, E2E_KAKAO } from "../fixtures/e2e-constants";
 import {
   mockMe,
   mockOwnerMe,
@@ -75,6 +75,37 @@ const server = createServer(async (req, res) => {
   if (url === "/auth/signup" && method === "POST") {
     const body = await readJson(req);
     return send(res, 201, mockSignup(String(body.role ?? "")));
+  }
+
+  // 카카오 로그인(POST /auth/kakao) — code sentinel로 분기(무상태).
+  // existingCode: 기존 연동 계정(accessToken 즉시 발급) / newCode: 신규 사용자(onboardingToken만 발급)
+  // / errorCode: 이메일 동의 누락 등 BE 400 에러 재현.
+  if (url === "/auth/kakao" && method === "POST") {
+    const body = await readJson(req);
+    if (body.code === E2E_KAKAO.errorCode) {
+      return send(res, 400, {
+        statusCode: 400,
+        code: "AUTH_KAKAO_EMAIL_REQUIRED",
+        message: "카카오 이메일 동의가 필요합니다.",
+      });
+    }
+    if (body.code === E2E_KAKAO.newCode) {
+      return send(res, 201, { onboardingToken: E2E_KAKAO.onboardingToken });
+    }
+    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
+  }
+
+  // 카카오 온보딩 완료(POST /auth/kakao/complete) — onboardingToken이 유효할 때만 accessToken 발급.
+  if (url === "/auth/kakao/complete" && method === "POST") {
+    const body = await readJson(req);
+    if (body.onboardingToken !== E2E_KAKAO.onboardingToken) {
+      return send(res, 400, {
+        statusCode: 400,
+        code: "AUTH_KAKAO_ONBOARDING_INVALID",
+        message: "잘못된 온보딩 토큰입니다.",
+      });
+    }
+    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
   }
 
   // 인증 사용자 정보(서명 검증 없음 — 목).

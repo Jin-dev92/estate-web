@@ -74,3 +74,11 @@ export const E2E_BUILDING = {
   issuedCode: "OWNER1CODE",
   expiresInSec: 600,
 } as const;
+
+// 카카오 OAuth E2E 결합 상수(목 BE와 테스트가 공유, 무상태 sentinel 분기).
+export const E2E_KAKAO = {
+  existingCode: "kakao-existing-code",
+  newCode: "kakao-new-code",
+  errorCode: "kakao-error-code",
+  onboardingToken: "kakao-onboarding-e2e",
+} as const;
