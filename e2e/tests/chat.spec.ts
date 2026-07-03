@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { MESSAGES } from "../../lib/messages";
 import { PAGE_ROUTES, API_ROUTES } from "../../lib/constants";
@@ -93,4 +94,44 @@ test("연결이 끊겼다가 자동으로 재연결되면 다시 메시지를 �
   // 재연결 후에도 정상적으로 보내고 에코를 받는다.
   await sendButton.click();
   await expect(page.getByText("재연결 후 메시지")).toBeVisible();
+});
+
+// C3: 두 사람(TENANT/OWNER)이 같은 방에 들어가 서로가 보낸 메시지를 받는다.
+// 3브라우저 병렬 실행이 서로 섞이지 않도록 테스트마다 랜덤 방 ID를 쓴다.
+test("상대방이 보낸 메시지를 받는다", async ({ browser }) => {
+  const roomId = `room-multiuser-${randomUUID()}`;
+
+  const tenantContext = await browser.newContext();
+  const ownerContext = await browser.newContext();
+  await loginAs(tenantContext);
+  await loginAsOwner(ownerContext);
+
+  const tenantPage = await tenantContext.newPage();
+  const ownerPage = await ownerContext.newPage();
+
+  await tenantPage.goto(PAGE_ROUTES.chatRoom(roomId));
+  await ownerPage.goto(PAGE_ROUTES.chatRoom(roomId));
+
+  const tenantInput = tenantPage.getByPlaceholder(MESSAGES.chat.inputPlaceholder);
+  const tenantSend = tenantPage.getByRole("button", { name: "전송" });
+  const ownerInput = ownerPage.getByPlaceholder(MESSAGES.chat.inputPlaceholder);
+  const ownerSend = ownerPage.getByRole("button", { name: "전송" });
+
+  // 입력이 채워진 뒤 전송 버튼이 활성화되면 = socket 연결됨(전송은 connected까지 비활성).
+  const fromTenant = "TENANT가 보낸 메시지";
+  await tenantInput.fill(fromTenant);
+  await expect(tenantSend).toBeEnabled({ timeout: 15_000 });
+
+  const fromOwner = "OWNER가 보낸 메시지";
+  await ownerInput.fill(fromOwner);
+  await expect(ownerSend).toBeEnabled({ timeout: 15_000 });
+
+  await tenantSend.click();
+  await expect(ownerPage.getByText(fromTenant)).toBeVisible();
+
+  await ownerSend.click();
+  await expect(tenantPage.getByText(fromOwner)).toBeVisible();
+
+  await tenantContext.close();
+  await ownerContext.close();
 });

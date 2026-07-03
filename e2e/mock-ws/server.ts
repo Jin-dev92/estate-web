@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import type { ChatMessage } from "../../lib/api";
-import { E2E_CHAT } from "../fixtures/e2e-constants";
+import { E2E_CHAT, E2E_OWNER_TOKEN } from "../fixtures/e2e-constants";
 
 // E2E 전용 socket.io 목 서버. 실 BE의 채팅 게이트웨이를 대신해 결정론적으로 동작한다.
 // 스코프(스펙 옵션 B): 한 방에서 connect → message emit → 같은 소켓으로 에코. auth 미검증.
@@ -52,17 +52,22 @@ io.on("connection", (socket) => {
         return;
       }
     }
+    socket.join(payload.roomId);
   });
   socket.on("message", (payload: { roomId: string; content: string }) => {
-    // 에코를 ChatMessage 계약에 묶어(drift 게이트) senderId=mockMe().id로 되돌린다(내 메시지 렌더).
+    // 발신자 판별 — 목 BE(HTTP)의 OWNER 판별 관례(bearer(req).includes(E2E_OWNER_TOKEN))와 동일.
+    const token = String(socket.handshake.auth?.token ?? "");
+    const senderId = token.includes(E2E_OWNER_TOKEN) ? "u-owner-e2e" : "u-e2e";
     const echo: ChatMessage = {
       roomId: payload.roomId,
       messageId: `m-echo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      senderId: "u-e2e",
+      senderId,
       content: payload.content,
       createdAt: new Date().toISOString(),
     };
-    socket.emit("message", echo);
+    // 발신자 포함 방 전체에 브로드캐스트. 1인 방(기존 해피패스)이면 발신자 본인만 있으므로
+    // 기존 "본인에게만 echo" 동작과 결과가 같다(회귀 없음).
+    io.to(payload.roomId).emit("message", echo);
   });
 });
 
