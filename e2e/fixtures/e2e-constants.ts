@@ -61,6 +61,10 @@ export const E2E_CHAT = {
   roomId: "room-e2e",
   // 이 방에 join하면 목 WS가 CHAT_NOT_ROOM_PARTICIPANT 에러를 emit한다(비참가자 분기).
   forbiddenRoomId: "room-forbidden-e2e",
+  // 이 토큰(prefix)으로 접속하면 목 WS가 핸드셰이크 단계에서 연결을 거부한다(connect_error 분기).
+  wsConnectErrorTokenBase: "e2e-ws-connect-error-token",
+  // 이 방은 목 WS가 토큰당 1회만 강제로 연결을 끊는다(재연결 시나리오 트리거).
+  reconnectRoomId: "room-reconnect-e2e",
 } as const;
 
 // 건물·호실·초대코드 발급 E2E 결합 상수(OWNER, 목 BE와 테스트가 공유).
