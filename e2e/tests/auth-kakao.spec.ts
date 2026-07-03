@@ -46,3 +46,13 @@ test("state가 일치하지 않으면 에러를 보이고 콜백 페이지에 �
   await expect(page.getByText(MESSAGES.auth.kakaoFailed)).toBeVisible();
   await expect(page).toHaveURL(/\/auth\/kakao\/callback/);
 });
+
+test("BE가 400을 반환하면 콜백에 에러 메시지를 보인다", async ({ page }) => {
+  await gotoKakaoCallback(page, {
+    code: E2E_KAKAO.errorCode,
+    urlState: "state-error",
+    seededState: "state-error",
+  });
+
+  await expect(page.getByText(MESSAGES.auth.kakaoEmailRequired)).toBeVisible();
+});
