@@ -73,3 +73,24 @@ test("연결이 거부되면 연결 실패 안내를 본다", async ({ page, con
 
   await expect(page.getByText(MESSAGES.chat.connectFailed)).toBeVisible();
 });
+
+// C2: 서버가 강제로 끊어도 socket.io-client 기본 자동 재연결로 복구되고, 재연결 후 정상 송수신된다.
+test("연결이 끊겼다가 자동으로 재연결되면 다시 메시지를 주고받을 수 있다", async ({ page, context }) => {
+  await loginAs(context);
+  await page.goto(PAGE_ROUTES.chatRoom(E2E_CHAT.reconnectRoomId));
+
+  const input = page.getByPlaceholder(MESSAGES.chat.inputPlaceholder);
+  const sendButton = page.getByRole("button", { name: "전송" });
+
+  // 이 방은 목 WS가 최초 입장 시 토큰당 1회 강제로 연결을 끊는다 — 끊김 안내가 뜬다.
+  await expect(page.getByText(MESSAGES.chat.disconnected)).toBeVisible({ timeout: 15_000 });
+
+  // 자동 재연결되면 끊김 안내가 사라지고 전송버튼이 다시 활성화된다.
+  await expect(page.getByText(MESSAGES.chat.disconnected)).toBeHidden({ timeout: 15_000 });
+  await input.fill("재연결 후 메시지");
+  await expect(sendButton).toBeEnabled({ timeout: 15_000 });
+
+  // 재연결 후에도 정상적으로 보내고 에코를 받는다.
+  await sendButton.click();
+  await expect(page.getByText("재연결 후 메시지")).toBeVisible();
+});

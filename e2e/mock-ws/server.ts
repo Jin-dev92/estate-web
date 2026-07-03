@@ -32,12 +32,25 @@ io.use((socket, next) => {
   next();
 });
 
+// reconnectRoomId 전용 — 토큰별로 "이미 한 번 끊었는지" 기억해 무한 재연결 루프를 막는다.
+const disconnectOnceTokens = new Set<string>();
+
 io.on("connection", (socket) => {
   socket.on("join", (payload: { roomId: string }) => {
-    // 비참가자 방이면 error emit(클라 → MESSAGES.chat.notParticipant). 그 외엔 ack 불필요.
     if (payload?.roomId === E2E_CHAT.forbiddenRoomId) {
-      // code는 ChatConversation이 분기하는 리터럴과 일치(실 BE 계약).
       socket.emit("error", { code: "CHAT_NOT_ROOM_PARTICIPANT" });
+      return;
+    }
+    if (payload?.roomId === E2E_CHAT.reconnectRoomId) {
+      const token = String(socket.handshake.auth?.token ?? "");
+      if (!disconnectOnceTokens.has(token)) {
+        disconnectOnceTokens.add(token);
+        // socket.disconnect()는 "io server disconnect" 사유를 발생시켜 socket.io-client가
+        // 의도적 종료로 간주하고 자동 재연결을 하지 않는다. 네트워크 순단을 흉내내
+        // 기본 자동 재연결을 트리거하려면 transport 레벨에서 끊어야 한다("transport close").
+        socket.conn.close();
+        return;
+      }
     }
   });
   socket.on("message", (payload: { roomId: string; content: string }) => {
