@@ -46,6 +46,7 @@
 | 카카오 OAuth 로그인 (콜백 진입 · 기존계정→대시보드 · 신규가입→역할선택→대시보드 · state 불일치 에러 · BE 에러) | ✅ |
 | 온보딩 가입 (건물주 가입→대시보드 · 입주자 초대코드 미리보기→가입→입주 · 무효 코드 에러) | ✅ |
 | 대시보드 홈 (TENANT '내 계약' · OWNER '내 건물'+보유 건물, 역할별 렌더) | ✅ |
+| 인증 가드 미들웨어 (미인증→보호 라우트 차단→`/login` · 인증 시 로그인/가입 페이지→대시보드 차단) | ✅ |
 | 설정 (프로필 렌더 · 이름 수정→재조회 반영 영속성 · 비밀번호 변경 성공/현재 비밀번호 불일치 · 로그아웃) | ✅ |
 | 건물·호실 (OWNER: 건물 목록→상세 호실 · 초대코드 발급→코드 노출) | ✅ |
 | 게시판 (목록 · 상세 · 글/댓글 작성→목록·상세 반영 영속성, 상태있는 목) | ✅ |
@@ -59,7 +60,7 @@
 
 > 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`·카카오 로그인 E2E·채팅 재연결/connect_error/멀티유저 E2E)은 위 커버리지 표에 반영. 아래는 **남은 작업**만. 우선순위 순으로 정렬(2026-07-02 지정).
 
-- [ ] **[우선순위 1] Playwright 공식 에이전트 시험 평가**: 검토 완료 → 시험 도입됨(`init-agents --loop=claude`, 검토: `docs/test/playwright-agents-review.md`). Healer(flaky 수리)·Generator(신규 커버리지 1건) 시범 사용 후 유지/확대/철회 판단.
+- [ ] **[우선순위 1] Playwright 공식 에이전트 시험 평가**: 검토 완료 → 시험 도입됨(`init-agents --loop=claude`, 검토: `docs/test/playwright-agents-review.md`). **Generator 시범 완료**(인증 가드 커버리지 1건 — 규약 준수율 100%·수정 0건, 결과: 검토 문서 7절). Healer(flaky 수리) 시범 후 유지/확대/철회 최종 판단.
 - [ ] 드리프트 게이트 확장: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
 - [ ] 테스트 typecheck 정비: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
 

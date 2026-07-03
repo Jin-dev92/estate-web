@@ -34,3 +34,23 @@
 
 - 새 세션에서도 `playwright-test-generator` 타입이 없으면: `.mcp.json` 승인 여부 확인, 레포 루트(정확히는 이 워크트리 루트)에 `.claude/agents/*.md`가 존재하는지 확인.
 - 그래도 안 되면 기존 방식(직접 작성)으로 커버리지만 완성하고, 에이전트 시범 실패 원인을 검토 문서에 기록한다(그 자체도 평가 데이터).
+
+## 이전 세션 진단 결과 (2026-07-03 14:40) — ⚠️ 새 세션은 먼저 읽을 것
+
+지난 세션에서 Generator를 두 번 디스패치했으나 **환경 이슈로 두 번 다 막혔다**. 근본 원인을 규명해 아래처럼 조치했다:
+
+1. **1차 막힘 — 의존성 미설치**: 워크트리(`.claude/worktrees/hungry-germain-76112f`)가 node_modules 없이 생성돼 `socket.io` 등이 없어 목 WS 서버 기동 실패. → **`pnpm install` 실행 완료(14:40)**. 이제 워크트리에 deps 존재.
+2. **2차 막힘 — MCP 서버 module resolution stale**: `Playwright Test did not expect test() to be called here`. 원인은 **세션(=`npx playwright run-test-mcp-server` MCP 서버)이 워크트리에 node_modules가 생기기 전에 부팅**돼, MCP 서버가 상위 프로젝트(`estate-web/node_modules`)의 playwright 인스턴스를 잡은 상태. 반면 방금 설치된 워크트리 테스트는 워크트리 `@playwright/test`를 import → 두 물리 인스턴스 충돌.
+
+**검증된 사실**:
+- `.mcp.json`의 `playwright-test` 설정·서버 연결은 **정상**(Generator가 브라우저 도구 접근 성공). 설정 누락 아님.
+- 워크트리에서 `pnpm exec playwright test e2e/tests/seed.spec.ts --project=chromium` **직접 실행은 통과**(12.2s). 설치·설정은 멀쩡하고, 문제는 오직 MCP 서버 부팅 타이밍.
+- 워크트리/상위 playwright 버전 동일(1.61.1). → deps 있는 상태로 MCP 서버가 다시 뜨면 단일 인스턴스로 정상.
+
+**따라서 세션을 재시작한 것**이다(사용자 지시). **이번 새 세션은 워크트리에 node_modules가 이미 존재하는 상태에서 시작**하므로 MCP 서버가 올바른 워크트리 인스턴스를 잡는다 → Generator 정상 동작 예상.
+
+### 새 세션(지금)의 진행 순서
+1. `git branch --show-current`로 `test/e2e-auth-guard` 확인(이미 체크아웃됨).
+2. 바로 위 "새 세션에서 할 일"의 2번부터 진행 — `playwright-test-generator` 디스패치(시나리오 3개는 "경량 플랜" 참조).
+3. Generator 평가 기록 시, **이번 시범이 환경 세팅(워크트리 deps 미설치 → 수동 install → 세션 재시작)에 시간이 든 점**도 검토 문서에 함께 남긴다(워크트리에서 Playwright 에이전트를 쓸 때의 실무 마찰 = 평가 데이터).
+4. 만약 이번에도 같은 stale 에러가 나면, 그때는 계획서 fallback(직접 작성 + 실패 원인 기록)으로 전환.

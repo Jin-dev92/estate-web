@@ -69,3 +69,44 @@
 
 - 설치 버전: `@playwright/test` 1.61.1 (`init-agents` 명령 포함 확인).
 - 에이전트 정의·생성 로직: `node_modules/.pnpm/playwright@1.61.1/node_modules/playwright/lib/agents/` (planner/generator/healer `.agent.md`, `generateAgents.js`, `*.prompt.md`) 직접 열람.
+
+## 7. 시범 결과 — Generator (2026-07-03)
+
+> 대상: `middleware.ts` 인증 가드 커버리지. 시나리오 3개(미인증 `/dashboard`→`/login` 차단, 인증 시 `/login`·`/signup`→`/dashboard` 차단)로 `playwright-test-generator` 에이전트를 디스패치해 `e2e/tests/auth-guard.spec.ts` 생성. 계획: `docs/plans/e2e-auth-guard-generator-trial-20260703.md`.
+
+### 7.1 생성물 품질 — 컨벤션 준수율 100%, 사람 수정 0건
+
+Generator가 만든 `auth-guard.spec.ts`를 AGENTS.md E2E 규약 기준으로 리뷰한 결과 **위반 0건, 수정 불필요**:
+
+| 규약 | 결과 |
+|---|---|
+| 시멘틱 셀렉터만 (`getByRole`) | ✅ CSS/DOM 셀렉터 없음 |
+| 경로 리터럴 금지 → `PAGE_ROUTES` import | ✅ `/login` 등 리터럴 없음 |
+| 하드 대기 금지 → `expect` auto-wait | ✅ `toHaveURL`+헤딩 단언 |
+| 한국어 테스트 제목 | ✅ `test.describe("인증 가드")` |
+| 인증 시작점 `loginAs` 픽스처 | ✅ 로그인 UI 미사용 |
+
+시드(`seed.spec.ts`)의 `loginAs` 패턴을 정확히 학습해 인증 시나리오에 적용했고, 실제 브라우저로 3개 리다이렉트를 눈으로 확인한 뒤 코드를 썼다. 정적 검사(`pnpm lint`·`pnpm typecheck`)도 통과.
+
+### 7.2 속도·소요
+
+- **Generator 1회 구동: 약 3.9분**(14:53:28→14:57:43, 브라우저 도구 28회 호출). 5절에서 예상한 "무거움"과 일치 — MCP가 세션마다 웹서버 스택(프로덕션 빌드 포함)을 기동하기 때문.
+- 기존 방식(SDD 서브에이전트 직접 작성) 대비 체감: 이 정도 단순 리다이렉트 3건은 손으로 짜도 빠르지만, **"실제 DOM을 보며 헤딩 텍스트를 확정"**하는 부분에서 추측 없이 정확했다. 값어치는 화면이 복잡하거나 셀렉터가 불확실한 커버리지에서 더 클 것.
+
+### 7.3 실무 마찰 (평가 데이터) — 워크트리 환경에서의 비용
+
+주목적(커버리지)과 별개로, **워크트리에서 Playwright 에이전트를 쓸 때의 마찰**이 시범의 절반이었다:
+
+1. **워크트리 deps 미설치.** 워크트리가 `node_modules` 없이 생성돼 목 WS(`socket.io`) 기동 실패 → 수동 `pnpm install` 필요.
+2. **MCP 서버 부팅 타이밍.** MCP 서버가 deps 설치 **이전**에 부팅되면 상위 프로젝트의 playwright 인스턴스를 잡아 `test() called here` 충돌 → **세션 재시작으로 해소**. deps가 있는 상태에서 시작하면 정상.
+3. **MCP 스코프 = 체크아웃된 브랜치.** `.mcp.json`·`.claude/agents/`는 git 추적 파일이라 **PR #41을 포함한 브랜치**에만 물리적으로 존재한다. 워크트리(#41 포함 브랜치)에선 MCP가 붙지만, 상위 레포가 #41 미포함 브랜치면 안 붙는다. → main 머지 후 main 체크아웃 세션이면 어디서든 사용 가능.
+4. **잔여 서버 프로세스.** Generator의 `setup_page`가 띄운 목 BE(:3099)·Next(:3000)가 종료 후에도 고정 포트에 남아, 이후 `playwright test`(`reuseExistingServer: false`)와 **포트 충돌**을 일으켰다. → 에이전트 구동 뒤 포트 정리 확인 필요.
+
+### 7.4 검증 상태
+
+- 정적: `pnpm lint`·`pnpm typecheck` ✅ 통과.
+- e2e 단일 실행·burn-in·`pnpm e2e` 전체 회귀: 포트 3000을 **다른 테스트가 점유 중**이라(`NEXT_PORT` 하드코딩 + `reuseExistingServer: false`) 이 세션에서 미실행. **main 체크아웃 세션에서 이어서 검증** 예정.
+
+### 7.5 판단
+
+**Generator 시범 = 성공(생성물 품질 기준).** 규약 준수율 100%·사람 수정 0건으로 5절의 "리터럴 리뷰 필요" 우려를 이번 케이스에선 깔끔히 통과. 다만 **워크트리 환경 마찰(7.3)이 실측 비용**이라, 4절 권장안 **B(시험 도입)**의 "Generator 신규 커버리지 1건" 조건을 충족하되, 상시 도구화보다는 **deps가 갖춰진 main/브랜치 세션에서 화면이 복잡한 커버리지에 선택적으로** 쓰는 게 비용 대비 효율적이다. Healer 시범(나머지 절반)까지 본 뒤 최종 유지/확대/철회를 판단한다.
