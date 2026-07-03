@@ -48,3 +48,5 @@ next-env.d.ts
 /test-results/
 /blob-report/
 /playwright/.cache/
+# playwright-test MCP 에이전트 디버그 산출물(콘솔 로그·페이지 스냅샷)
+/.playwright-mcp/
