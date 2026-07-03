@@ -1,76 +1,141 @@
 # E2E 스펙 — 채팅 재연결 · connect_error · 멀티유저 수신
 
-> 작성: 2026-07-03 · 대상: 채팅 E2E 확장(잔여, README 후속 백로그 우선순위 1) · 방식: SDD 풀. WebSocket 실시간 실패/멀티유저 분기라 복잡 플로우로 분류.
+> 작성: 2026-07-03 · 대상: 채팅 E2E 확장(잔여, README 후속 백로그 우선순위 1) · 방식: SDD 풀.
+> 이 문서는 **주니어 개발자가 배경지식 없이도 이해하고 구현을 시작할 수 있도록** 개념 설명을 포함해서 씁니다. 이미 아는 내용이면 건너뛰어도 됩니다.
 
-## Context / 목표
+## 0. 먼저 알아야 할 개념
 
-`docs/test/e2e-chat-spec.md`(옵션 B)로 연결·전송→에코 해피패스와 비참가자 에러는 이미 커버됐다. 그 스펙의 "Out of Scope(후속)"에 명시된 두 항목이 남아 있다:
+**socket.io란?** 브라우저와 서버가 실시간으로 양방향 메시지를 주고받는 라이브러리입니다(내부적으로 WebSocket을 씀). 이 프로젝트의 채팅 기능이 이걸 씁니다.
 
-1. 재연결·`connect_error` 실패 분기
-2. 멀티유저 수신(상대가 보낸 메시지)
+**"핸드셰이크(handshake)"란?** 브라우저가 `io(WS_URL, {...})`를 호출해서 서버에 처음 연결을 시도하는 순간을 말합니다. 이때 브라우저는 `auth: { token }`처럼 인증 정보를 같이 보낼 수 있습니다. **이 시점에는 아직 "어느 채팅방에 들어갈지"는 서버가 모릅니다** — 방 정보(`roomId`)는 연결이 성공(`connect` 이벤트)한 *다음에* 별도로 `join` 이벤트로 보내기 때문입니다. 이 스펙에서 여러 번 나오는 "핸드셰이크에는 roomId가 없다"는 말이 바로 이 뜻입니다.
 
-본 스펙은 이 두 항목을 커버한다.
+**socket.io의 이벤트 4가지** (이 스펙에서 다루는 것들):
+- `connect` — 연결 성공
+- `disconnect` — 연결이 끊김(서버가 끊었거나 네트워크 문제)
+- `connect_error` — **연결 시도 자체가 처음부터 실패**(예: 서버가 인증을 거부함). `connect`는 한 번도 발생하지 않습니다.
+- `message` — 채팅 메시지 이벤트(우리가 직접 정의한 이벤트 이름)
 
-## Current State (확인됨)
+**"room(방)"이란?** socket.io 서버가 소켓들을 그룹으로 묶는 기능입니다. `socket.join("어떤방")`을 호출하면 그 소켓이 그룹에 들어가고, 서버가 `io.to("어떤방").emit(...)`을 호출하면 그 그룹에 속한 **모든** 소켓이 메시지를 받습니다(브로드캐스트). 지금 우리 목(mock) 서버는 `socket.join()`을 호출하지 않고 있어서, 사실상 "방"이라는 개념이 서버 쪽엔 없고 그냥 "메시지 보낸 사람에게 그대로 되돌려주기"만 하고 있습니다.
 
-- `components/chat/chat-conversation.tsx`: `io(WS_URL, { auth: { token }, transports: ["websocket"] })` — reconnection 옵션 미지정(socket.io-client 기본값: 자동 재연결 on). `disconnect` → `MESSAGES.chat.disconnected`("연결이 끊어졌어요. 재연결 중…") 노출 + 전송버튼 비활성. `connect_error` → `MESSAGES.chat.connectFailed` 노출. `connect` 재발생 시 `join` 재emit, 에러 초기화.
-- `app/(app)/chat/[roomId]/page.tsx`: 세션 쿠키 토큰을 그대로 `ChatConversation`의 `token` prop(→ WS `auth.token`)으로 넘긴다. **핸드셰이크에는 token만 있고 roomId는 없다** — `join` emit(연결 후)에만 roomId가 실린다.
-- `e2e/mock-ws/server.ts`: `io.use()` 미들웨어 없음(인증 미검증). `join` 핸들러는 `forbiddenRoomId` 체크만 하고 **`socket.join()`을 호출하지 않는다**(소켓이 실제 socket.io room에 들어가지 않음). `message` 핸들러는 `socket.emit`으로 **발신자에게만** 에코하며 `senderId`를 `"u-e2e"`로 하드코딩한다.
-- 목 BE `mockChatRoom()`: `ownerId:"u-owner-e2e"`, `tenantId:"u-e2e"` — 이미 2자 구도로 세팅되어 있다(`e2e/fixtures/mock-data.ts`).
-- `e2e/fixtures/auth.ts`의 `loginAs`/`loginAsOwner`는 매 호출 `${base}-${randomUUID()}` 유니크 토큰을 세션 쿠키로 주입한다(3브라우저 병렬 격리 관례, `docs/test/e2e-stateful-mock-spec.md` 옵션 A 패턴).
+**"목(mock) 서버"란?** 진짜 백엔드 대신 테스트에서만 쓰는 가짜 서버입니다. `e2e/mock-ws/server.ts`가 그 파일이고, 진짜 socket.io 서버 라이브러리를 그대로 쓰되 우리가 원하는 대로 동작(에러를 일부러 내거나, 특정 상황을 재현하거나)하도록 코드를 직접 작성한 것입니다.
 
-## 범위 결정 (사용자 확인 완료)
+## 1. 지금까지 뭐가 되어 있고, 뭐가 안 되어 있나
 
-- **재연결**: "끊김 UI 전환"만이 아니라 **재연결 후 송수신까지 단언**한다(재연결이 실제로 다시 쓸 수 있는 상태인지 증명).
-- **connect_error 트리거**: room 기반(기존 `forbiddenRoomId` 패턴)은 핸드셰이크에 roomId가 없어 불가. **전용 세션 토큰**(`loginAsWsConnectError` 신설)으로 트리거한다. 앱 코드는 변경하지 않는다.
-- **멀티유저 방 ID**: 고정 상수 대신 **테스트마다 `crypto.randomUUID()`로 방 ID를 생성**한다. 3브라우저(chromium·firefox·webkit)가 같은 스펙을 동시 실행해도 방이 섞이지 않는다(기존 `loginAs` uuid-토큰 격리와 동일 원리).
+기존 스펙(`docs/test/e2e-chat-spec.md`)에서 이미 구현·테스트된 것:
+- 방에 들어가서 메시지를 보내면 에코(내가 보낸 메시지가 그대로 돌아옴)를 받는 "해피패스"
+- 참가자가 아닌 방에 들어갔을 때 에러 안내
 
-## 설계
+**아직 테스트가 없는 것 (이번 스펙의 대상):**
+1. 연결이 끊겼다가 **자동으로 재연결**되는 상황
+2. 연결 자체가 **처음부터 거부**되는 상황(`connect_error`)
+3. **다른 사람이 보낸 메시지**를 내가 받는 상황(지금까지는 항상 "내가 보낸 메시지가 나에게 돌아오는" 상황만 테스트했음)
 
-앱 코드는 건드리지 않는다. 목 WS 서버만 확장한다.
+## 2. 지금 코드가 실제로 어떻게 동작하는지 (읽고 나서 진행)
 
-### 1) 재연결
+**클라이언트(브라우저) 쪽** — `components/chat/chat-conversation.tsx`:
 
-- `E2E_CHAT.reconnectRoomId` 상수 추가.
-- 목 WS: 이 방으로 `join`이 들어오면 **토큰별 1회만** `socket.disconnect(true)`(모듈 스코프 `Set<token>`으로 추적 — 이미 끊은 토큰은 재입장 시 통과). 클라이언트는 socket.io-client 기본 재연결(on)로 자동 재시도.
-- Acceptance: ①입장 시 전송버튼 활성 ②강제 종료 후 "연결이 끊어졌어요…" 노출 + 전송버튼 비활성 ③자동 재연결 후 전송버튼 재활성 ④메시지 전송→에코 도착.
+```ts
+const socket = io(WS_URL, { auth: { token }, transports: ["websocket"] });
+socket.on("connect", () => { setConnected(true); socket.emit("join", { roomId }); });
+socket.on("disconnect", () => setConnected(false));
+socket.on("connect_error", () => setError(MESSAGES.chat.connectFailed));
+```
 
-### 2) connect_error
+여기서 `io(...)`를 호출할 때 재연결 관련 옵션을 아무것도 안 주고 있습니다. socket.io-client는 **옵션을 안 주면 기본적으로 자동 재연결을 켜둡니다**(끊기면 알아서 다시 시도). 그래서 우리가 서버에서 강제로 연결을 끊기만 하면, 클라이언트는 자동으로 재연결을 시도하고, 성공하면 다시 `connect` 이벤트가 발생해서 `join`도 다시 보냅니다. **즉, 재연결 로직은 이미 앱에 다 있고, 우리는 서버 쪽에서 "한 번 끊어보는 것"만 만들면 됩니다.**
 
-- `e2e/fixtures/auth.ts`에 `loginAsWsConnectError(context)` 추가 — `loginAs`/`loginAsOwner`와 동일한 `injectSession` 패턴, 신규 sentinel 토큰 베이스 사용.
-- `E2E_CHAT.wsConnectErrorTokenBase` 상수 추가.
-- 목 WS에 `io.use((socket, next) => { ... })` 추가: `socket.handshake.auth.token`이 이 베이스로 시작하면 `next(new Error("connect_error"))`.
-- Acceptance: 방 페이지 진입 시 `MESSAGES.chat.connectFailed`가 노출된다(연결 자체가 성립하지 않음 — `connect`/`join`이 전혀 발생하지 않는다).
+**서버(목 WS) 쪽** — `e2e/mock-ws/server.ts`, 지금 코드:
 
-### 3) 멀티유저 수신
+```ts
+socket.on("join", (payload) => {
+  if (payload?.roomId === E2E_CHAT.forbiddenRoomId) {
+    socket.emit("error", { code: "CHAT_NOT_ROOM_PARTICIPANT" });
+  }
+  // ⚠️ socket.join(payload.roomId)가 없다 — 실제 socket.io room에 들어가지 않는다
+});
+socket.on("message", (payload) => {
+  const echo = { ...payload, senderId: "u-e2e", /* ... */ };
+  socket.emit("message", echo); // ⚠️ 보낸 사람에게만 돌려줌. 다른 사람은 못 받음.
+});
+```
 
-- 목 WS `join` 핸들러에 `socket.join(payload.roomId)` 추가(현재 누락 — 이게 있어야 `io.to(roomId)` 브로드캐스트가 실제로 작동한다).
-- `message` 핸들러: `socket.emit` → `io.to(payload.roomId).emit`으로 변경(발신자 포함 방 전체 브로드캐스트 — 기존 해피패스는 발신자=수신자라 동작 동일, 회귀 없음).
-- `senderId`: 하드코딩 `"u-e2e"` → 토큰 기반 판별로 변경(`token.includes(E2E_OWNER_TOKEN)` → `"u-owner-e2e"`, 그 외 → `"u-e2e"`; 기존 HTTP 목의 OWNER 판별 관례와 동일 — `bearer(req).includes(E2E_OWNER_TOKEN)`).
-- 테스트: `browser.newContext()`로 TENANT/OWNER 두 컨텍스트 생성 → `loginAs`/`loginAsOwner` 각각 주입 → `crypto.randomUUID()`로 만든 방 ID(`room-multiuser-<uuid>`)로 두 페이지 모두 입장.
-- Acceptance: 한쪽이 보낸 메시지가 상대 화면에 "내 메시지 아님"(좌측 정렬, `bg-surface-2`) 버블로 나타난다. 기존 해피패스·비참가자 테스트는 회귀 없이 그대로 통과한다.
+두 군데에 `⚠️`로 표시한 부분이 이번 작업에서 고쳐야 할 지점입니다.
 
-## Files Reference
+## 3. 세 가지 시나리오, 각각 어떻게 만들지
 
-| File | Change |
-|------|--------|
-| `e2e/fixtures/e2e-constants.ts` | `E2E_CHAT`에 `reconnectRoomId`·`wsConnectErrorTokenBase` 추가 |
-| `e2e/fixtures/auth.ts` | `loginAsWsConnectError` 신설 |
-| `e2e/mock-ws/server.ts` | `io.use()` 인증 거부 미들웨어, `join`에 `socket.join()`+재연결 트리거, `message`에 room 브로드캐스트+동적 senderId |
-| `e2e/tests/chat.spec.ts` | 재연결·connect_error·멀티유저 시나리오 3개 추가 |
-| `README.md` | 커버리지 표 채팅 행 갱신, 백로그에서 해당 항목 제거 |
+### 3-1. 재연결(reconnect)
 
-## Acceptance Criteria (전체)
+**목표:** 서버가 연결을 강제로 끊고, 클라이언트가 자동으로 재연결한 뒤 다시 메시지를 주고받을 수 있는지 확인한다.
 
-1. 재연결: 끊김→UI 전환→자동 재연결→송수신 정상.
-2. connect_error: 전용 토큰 접속 시 연결 실패 안내 노출.
-3. 멀티유저: 상대가 보낸 메시지가 "내 메시지 아님" 스타일로 렌더.
-4. 3브라우저(chromium·firefox·webkit) + burn-in(`--repeat-each=5`) 무 flaky.
-5. 기존 채팅 E2E(해피패스·목록·비참가자·문의시작) 회귀 없음.
-6. 앱 코드(`app/`·`components/`·`lib/`) 변경 없음 — 목 WS와 E2E 인프라만 확장.
+**어떻게 트리거하나:** 전용 방 ID(`E2E_CHAT.reconnectRoomId`)를 하나 만든다. 이 방으로 `join`이 들어오면 서버가 `socket.disconnect(true)`를 호출해서 강제로 끊는다.
 
-## Out of Scope
+**주의할 점 — 딱 한 번만 끊어야 한다:** 클라이언트가 재연결하면 `join`이 또 들어옵니다. 이때 또 끊어버리면 무한 재연결 루프가 됩니다. 그래서 "이 토큰은 이미 한 번 끊었다"를 서버가 기억해야 합니다(`Set<token>` 같은 메모리 저장소로 — 서버 재시작하면 초기화되는 정도의 간단한 저장이면 충분합니다, 목 서버라서 DB 필요 없음).
 
-- WS 재연결 백오프 타이밍 자체의 정밀 검증(지수 백오프 간격 등) — "재연결되어 다시 쓸 수 있다"만 증명.
-- 3인 이상 멀티유저, 타이핑 인디케이터·읽음 확인 등 미구현 기능.
-- `connect_error` 이후 자동 재시도 성공 케이스(현재 시나리오는 "계속 거부됨" 상태만 확인).
+**왜 토큰으로 구분하나:** 방 ID로만 구분하면, 같은 테스트가 3개 브라우저(chromium·firefox·webkit)에서 동시에 돌 때 서로 영향을 줄 수 있습니다. 하지만 `loginAs`가 매번 랜덤한 유니크 토큰을 발급하기 때문에(`e2e-token-<uuid>`처럼), 토큰 기준으로 "이미 끊었는지" 판단하면 브라우저마다 독립적으로 동작합니다.
+
+**확인할 것(테스트가 통과해야 하는 조건):**
+1. 방에 들어가면 전송 버튼이 활성화된다(연결됨).
+2. 서버가 강제로 끊으면 "연결이 끊어졌어요. 재연결 중…" 문구가 뜨고, 전송 버튼이 비활성화된다.
+3. 잠시 후 자동으로 재연결되면 전송 버튼이 다시 활성화된다.
+4. 그 상태에서 메시지를 보내면 정상적으로 에코가 온다(재연결 후에도 실제로 쓸 수 있다는 걸 증명).
+
+### 3-2. connect_error
+
+**목표:** 서버가 연결 자체를 거부했을 때, 화면에 실패 안내가 뜨는지 확인한다.
+
+**왜 room 방식을 못 쓰나:** 위 "0. 개념"에서 설명했듯, roomId는 연결이 된 *다음*에야 서버가 알 수 있습니다. `connect_error`는 연결이 되기도 전에 발생하는 이벤트라서, room으로는 구분할 방법이 없습니다. 구분할 수 있는 건 핸드셰이크에 실려 오는 `token`뿐입니다.
+
+**어떻게 트리거하나:** "이 토큰이면 무조건 연결을 거부한다"는 전용 토큰을 하나 만듭니다. socket.io 서버에는 `io.use((socket, next) => {...})`라는 미들웨어 기능이 있는데, 여기서 `next(new Error("..."))`를 호출하면 그 연결은 거부되고 클라이언트에서 `connect_error`가 발생합니다(`connect`는 발생 안 함).
+
+새로 만들 것:
+- `e2e/fixtures/auth.ts`에 `loginAsWsConnectError(context)` 함수 — 기존에 있는 `loginAs`/`loginAsOwner`와 완전히 똑같은 구조인데, 세션 쿠키에 이 전용 토큰을 넣어주는 것만 다릅니다.
+- `E2E_CHAT.wsConnectErrorTokenBase` 상수 — 그 전용 토큰의 값.
+
+**확인할 것:** 이 전용 토큰으로 로그인한 상태에서 채팅방에 들어가면 `MESSAGES.chat.connectFailed`("실시간 연결에 실패했어요…") 문구가 뜬다.
+
+### 3-3. 멀티유저 수신(상대방이 보낸 메시지)
+
+**목표:** TENANT(입주자)와 OWNER(건물주) 두 사람이 같은 방에 들어가서, 한쪽이 보낸 메시지를 다른 쪽이 실제로 받는지 확인한다.
+
+**지금 왜 안 되나:** 서버가 `socket.join()`을 안 해서 socket.io room에 아무도 안 들어가 있고, 메시지도 보낸 사람 본인에게만 돌려주고 있기 때문입니다("에코"만 되고 "전달"은 안 됨).
+
+**고칠 것 두 가지 (서버 쪽만):**
+1. `join` 핸들러에 `socket.join(payload.roomId)`를 추가한다 — 이제 소켓이 진짜로 그 방 그룹에 들어간다.
+2. `message` 핸들러에서 `socket.emit(...)`(보낸 사람에게만) 대신 `io.to(payload.roomId).emit(...)`(그 방에 있는 **모두**에게)로 바꾼다.
+
+**메시지를 누가 보냈는지는 어떻게 표시하나:** 지금은 `senderId`가 항상 `"u-e2e"`로 고정돼 있는데(그래서 항상 "내가 보낸 메시지"처럼 보임), 이제 두 사람이 각자 다른 사람으로 로그인하므로 진짜 보낸 사람이 누구인지 구분해야 합니다. 방법: 목 BE(HTTP)가 이미 쓰고 있는 방식과 똑같이, 토큰에 `E2E_OWNER_TOKEN` 문자열이 포함돼 있으면 `"u-owner-e2e"`, 아니면 `"u-e2e"`로 판단합니다.
+
+**테스트에서 두 사람을 어떻게 동시에 여나:** Playwright의 `browser.newContext()`로 브라우저 컨텍스트(=독립된 쿠키 저장소, 별도 로그인 세션이라고 생각하면 됩니다)를 두 개 만듭니다. 하나는 `loginAs`(TENANT), 다른 하나는 `loginAsOwner`(OWNER)로 로그인시키고, 두 페이지를 같은 방 URL로 이동시킵니다.
+
+**방 ID를 어떻게 정하나:** 고정된 방 ID를 쓰면, 3개 브라우저가 이 테스트 파일을 동시에 돌릴 때(예: chromium 테스트와 firefox 테스트가 동시에) 서로 다른 테스트의 메시지가 같은 방에 섞여 들어올 수 있습니다. 그래서 테스트를 실행할 때마다 `crypto.randomUUID()`로 매번 새로운 방 ID(`room-multiuser-<uuid>`)를 만들어서 씁니다. 이렇게 하면 각 테스트 실행이 완전히 독립된 방을 쓰게 됩니다.
+
+**확인할 것:** 한쪽(예: TENANT)이 메시지를 보내면, 다른 쪽(OWNER) 화면에 그 메시지가 "내가 보낸 게 아닌" 스타일(왼쪽 정렬, 회색 배경)로 나타난다.
+
+**기존 테스트가 깨지지 않는지:** 기존 해피패스 테스트는 한 사람이 자기 자신에게 에코를 받는 상황인데, "방 전체에 브로드캐스트"로 바꿔도 그 방에는 본인 소켓 하나뿐이므로 결과는 똑같습니다(본인이 브로드캐스트도 받음). 그래서 회귀가 생기지 않습니다.
+
+## 4. 이번에 새로 만들거나 고칠 파일 목록
+
+| 파일 | 무엇을 바꾸나 | 왜 |
+|------|------|------|
+| `e2e/fixtures/e2e-constants.ts` | `E2E_CHAT`에 `reconnectRoomId`, `wsConnectErrorTokenBase` 두 값 추가 | 세 시나리오를 트리거할 "약속된 값"이 테스트와 목 서버 양쪽에서 똑같아야 하므로, 한 곳에서 정의해서 같이 가져다 씀(중복 방지) |
+| `e2e/fixtures/auth.ts` | `loginAsWsConnectError` 함수 추가 | connect_error 전용 토큰으로 로그인하는 테스트 헬퍼 |
+| `e2e/mock-ws/server.ts` | ① `io.use()` 인증 거부 미들웨어 추가 ② `join`에 `socket.join()` + 재연결 트리거 추가 ③ `message`를 룸 브로드캐스트로 변경 + `senderId` 동적 판별 | 3개 시나리오의 실제 동작 |
+| `e2e/tests/chat.spec.ts` | 시나리오 3개(재연결/connect_error/멀티유저) 테스트 추가 | 이번 스펙의 Acceptance Criteria 검증 |
+| `README.md` | 커버리지 표 갱신, 백로그에서 이 항목 제거 | 문서를 실제 상태와 맞추기 |
+
+**중요:** 이번 작업은 앱 코드(`app/`, `components/`, `lib/` 아래 실제 서비스 코드)를 하나도 건드리지 않습니다. `e2e/` 폴더(테스트 전용 코드)만 고칩니다.
+
+## 5. Acceptance Criteria (완료 판단 기준)
+
+1. 재연결: 끊김 → "연결이 끊어졌어요…" 노출·전송버튼 비활성 → 자동 재연결 → 전송버튼 재활성 → 메시지 전송·에코 수신까지 정상.
+2. connect_error: 전용 토큰으로 접속 시 `MESSAGES.chat.connectFailed` 노출.
+3. 멀티유저: 상대가 보낸 메시지가 "내 메시지 아님" 스타일로 렌더된다.
+4. `pnpm e2e:burn`(각 테스트 5회 반복) 기준으로 3개 브라우저(chromium·firefox·webkit) 전부 flaky 없이 통과.
+5. 기존 채팅 E2E(해피패스·목록 렌더·비참가자 에러·문의 시작) 전부 회귀 없이 그대로 통과.
+6. `app/`·`components/`·`lib/` 아래 실제 서비스 코드는 변경하지 않는다 — `e2e/` 테스트 인프라만 확장한다.
+
+## 6. 이번에 하지 않는 것 (Out of Scope)
+
+- 재연결 대기 시간(백오프 간격 등)의 정밀한 타이밍 검증 — "끊겼다가 다시 정상적으로 쓸 수 있다"만 증명하면 충분합니다.
+- 3명 이상이 동시에 채팅하는 경우.
+- 타이핑 중 표시, 읽음 확인 같은 아직 앱에 없는 기능.
+- connect_error가 발생한 뒤 재시도해서 성공하는 경우 — 이번 시나리오는 "계속 거부되는 상태"만 확인합니다.
