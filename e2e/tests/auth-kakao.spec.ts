@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { PAGE_ROUTES } from "../../lib/constants";
 import { MESSAGES } from "../../lib/messages";
 import { E2E_KAKAO } from "../fixtures/e2e-constants";
 import { gotoKakaoCallback } from "../fixtures/kakao";
