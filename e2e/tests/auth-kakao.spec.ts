@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { PAGE_ROUTES } from "../../lib/constants";
+import { MESSAGES } from "../../lib/messages";
 import { E2E_KAKAO } from "../fixtures/e2e-constants";
 import { gotoKakaoCallback } from "../fixtures/kakao";
 
@@ -33,4 +34,15 @@ test("신규 카카오 사용자는 역할 선택 후 대시보드로 이동한�
   ]);
   expect(res.ok()).toBe(true);
   await expect(page).toHaveURL(/\/dashboard/);
+});
+
+test("state가 일치하지 않으면 에러를 보이고 콜백 페이지에 머무른다", async ({ page }) => {
+  await gotoKakaoCallback(page, {
+    code: E2E_KAKAO.existingCode,
+    urlState: "state-mismatch-url",
+    seededState: "state-mismatch-seeded",
+  });
+
+  await expect(page.getByText(MESSAGES.auth.kakaoFailed)).toBeVisible();
+  await expect(page).toHaveURL(/\/auth\/kakao\/callback/);
 });
