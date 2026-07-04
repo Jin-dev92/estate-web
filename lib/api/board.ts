@@ -1,4 +1,4 @@
-import { authGet, authPost } from "./client";
+import { authGet, authPost, authDelete } from "./client";
 import type { PostCategory } from "../constants";
 
 export type Post = {
@@ -7,6 +7,8 @@ export type Post = {
   title: string;
   authorId: string;
   createdAt?: string;
+  likeCount: number;
+  likedByMe: boolean;
 };
 
 export type Comment = {
@@ -32,3 +34,11 @@ export const backendCreatePost = (
 
 export const backendCreateComment = (t: string, postId: string, content: string) =>
   authPost<Comment>(`/posts/${postId}/comments`, t, { content });
+
+type LikeResult = { postId: string; liked: boolean; likeCount: number };
+
+export const backendLikePost = (t: string, postId: string) =>
+  authPost<LikeResult>(`/posts/${postId}/likes`, t);
+
+export const backendUnlikePost = (t: string, postId: string) =>
+  authDelete<LikeResult>(`/posts/${postId}/likes`, t);
