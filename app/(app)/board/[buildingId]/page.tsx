@@ -42,6 +42,8 @@ export default async function BoardListPage({
                 title={p.title}
                 createdAt={p.createdAt}
                 buildingId={buildingId}
+                likeCount={p.likeCount}
+                likedByMe={p.likedByMe}
               />
             ))}
           </div>

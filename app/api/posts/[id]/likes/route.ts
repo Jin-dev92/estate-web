@@ -1,0 +1,35 @@
+import { NextResponse } from "next/server";
+import { getToken } from "@/lib/session";
+import { backendLikePost, backendUnlikePost, ApiError } from "@/lib/api";
+
+export async function POST(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const token = await getToken();
+  if (!token) return NextResponse.json({ message: "인증 필요" }, { status: 401 });
+  try {
+    const { id } = await params;
+    const result = await backendLikePost(token, id);
+    return NextResponse.json(result, { status: 201 });
+  } catch (e) {
+    const err = e as ApiError;
+    return NextResponse.json({ message: err.message, status: err.status }, { status: err.status ?? 500 });
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const token = await getToken();
+  if (!token) return NextResponse.json({ message: "인증 필요" }, { status: 401 });
+  try {
+    const { id } = await params;
+    const result = await backendUnlikePost(token, id);
+    return NextResponse.json(result, { status: 200 });
+  } catch (e) {
+    const err = e as ApiError;
+    return NextResponse.json({ message: err.message, status: err.status }, { status: err.status ?? 500 });
+  }
+}

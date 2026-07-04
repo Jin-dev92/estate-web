@@ -83,6 +83,8 @@ export function mockPost(): Post {
     title: E2E_BOARD.postTitle,
     authorId: "u-e2e",
     createdAt: "2026-07-01T00:00:00.000Z",
+    likeCount: 0,
+    likedByMe: false,
   };
 }
 
@@ -110,6 +112,8 @@ export function addPost(title: string, content: string): Post {
     title,
     authorId: "u-e2e",
     createdAt: new Date().toISOString(),
+    likeCount: 0,
+    likedByMe: false,
   };
   boardPosts.unshift(post);
   boardDetails.set(post.id, { content, comments: [] });

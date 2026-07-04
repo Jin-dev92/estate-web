@@ -22,6 +22,7 @@ export const API_ROUTES = {
   unitInviteCodes: (id: string) => `/api/units/${id}/invite-codes`,
   buildingPosts: (id: string) => `/api/buildings/${id}/posts`,
   postComments: (id: string) => `/api/posts/${id}/comments`,
+  postLikes: (id: string) => `/api/posts/${id}/likes`,
   chatRooms: "/api/chat/rooms",
   notificationsRead: "/api/notifications/read",
   notificationRead: (id: string) => `/api/notifications/${id}/read`,

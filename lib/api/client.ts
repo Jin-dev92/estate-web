@@ -47,3 +47,11 @@ export function authPatch<T>(path: string, token: string, body?: unknown, errorM
     ...(body !== undefined && { body: JSON.stringify(body) }),
   }, errorMap);
 }
+
+// 인증 DELETE — body 없음(좋아요 취소 등)
+export function authDelete<T>(path: string, token: string, errorMap: Record<number, string> = {}) {
+  return call<T>(path, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  }, errorMap);
+}
