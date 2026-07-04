@@ -6,6 +6,7 @@ import { Chip } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListRow } from "@/components/ui/list-row";
 import { CommentForm } from "@/components/board/comment-form";
+import { LikeButton } from "@/components/board/like-button";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 import { PAGE_ROUTES, POST_CATEGORY, POST_CATEGORY_LABEL, ROLE } from "@/lib/constants";
 import { MESSAGES } from "@/lib/messages";
@@ -49,6 +50,14 @@ export default async function BoardPostPage({
         </div>
         <h1 className="mb-4 text-[20px] font-extrabold tracking-tight">{post.title}</h1>
         <p className="whitespace-pre-wrap text-[15px] text-text leading-relaxed">{post.content}</p>
+        <div className="mt-4">
+          <LikeButton
+            postId={postId}
+            initialLikeCount={post.likeCount}
+            initialLikedByMe={post.likedByMe}
+            variant="full"
+          />
+        </div>
       </Card>
 
       {me?.role === ROLE.OWNER && me.id !== post.authorId && (
