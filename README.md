@@ -8,7 +8,18 @@
 
 - **Next.js 16** (App Router) · **React 19** · **TypeScript**
 - **Tailwind CSS v4** — 디자인 토큰을 CSS 변수로 두고 `@theme`로 매핑
+- **TanStack Query v5** · **React Hook Form** · **Zod**
+- **Socket.IO** — 채팅·알림 실시간 이벤트
+- **Vitest** · **Playwright** — 단위/컴포넌트 테스트와 핵심 사용자 흐름 E2E
 - **Pretendard** (가변 폰트, 한국어)
+
+## 주요 기능
+
+- 건물주·입주자 역할별 가입과 httpOnly 세션 인증
+- 역할별 대시보드와 건물·호실·초대코드 관리
+- 게시글·댓글 작성과 게시글 좋아요 낙관적 토글
+- Socket.IO 기반 1:1 채팅과 실시간 알림
+- 프로필·비밀번호 변경과 로그아웃
 
 ## 디자인 시스템
 
@@ -27,7 +38,7 @@
 | **FE-M0** | 온보딩 — 로그인 · 역할 선택 · 건물주 가입 · 입주자 초대 통합 가입 · httpOnly 세션 | ✅ 구현 |
 | **FE-M1** | 대시보드 홈 (OWNER / TENANT) | ✅ 구현 |
 | **FE-M2** | 건물 · 호실 · 초대코드 관리 (OWNER) | ✅ 구현 |
-| **FE-M3** | 게시판 (목록 · 상세 · 작성 · 좋아요 낙관적 토글) | ✅ 구현 |
+| **FE-M3** | 게시판 (목록 · 상세 · 작성 · 댓글 · 좋아요 낙관적 토글) | ✅ 구현 |
 | **FE-M4** | 1:1 채팅 (WebSocket 실시간) | ✅ 구현 |
 | **FE-M5** | 알림 센터 (실시간 · 단건/전체 읽음 · 딥링크) | ✅ 구현 |
 | **FE-M6** | 설정 · 프로필 (이름 수정 · 비밀번호 변경 · 로그아웃) | ✅ 구현 |
@@ -68,13 +79,63 @@
 
 ## 시작하기
 
-> 패키지 매니저는 **pnpm**입니다(`packageManager` 필드로 버전 고정 — `corepack enable`로 자동 사용).
+### 요구사항
+
+- Node.js 20.9 이상 (Next.js 16 요구사항)
+- pnpm 9.15.0 (`packageManager` 필드로 고정)
+- 로컬 통합 개발 시 `http://localhost:3001`에서 실행 중인 `estate-server`
+
+Corepack으로 저장소에 고정된 pnpm 버전을 활성화합니다.
 
 ```bash
+corepack enable
 pnpm install
-pnpm dev         # http://localhost:3000 (개발 서버)
-pnpm build       # 프로덕션 빌드
-pnpm lint        # ESLint
+```
+
+### 환경변수
+
+프로젝트 루트에 `.env.local`을 만듭니다. 아래 값은 모두 선택 사항이며, 미설정 시 백엔드와 WebSocket은 `http://localhost:3001`을 사용합니다.
+
+```dotenv
+# 서버 컴포넌트와 Route Handler에서만 사용하는 백엔드 주소
+BACKEND_URL=http://localhost:3001
+
+# 브라우저에서 사용하는 Socket.IO 서버 주소
+NEXT_PUBLIC_WS_URL=http://localhost:3001
+
+# 카카오 OAuth JavaScript 앱 키
+NEXT_PUBLIC_KAKAO_CLIENT_ID=
+```
+
+> `NEXT_PUBLIC_*` 변수는 브라우저 번들에 공개됩니다. 비밀 키나 서버 자격 증명은 이 접두사에 넣지 말고, 서버 전용 환경변수와 백엔드에서 관리하세요.
+
+### 실행 및 검증
+
+| 명령 | 설명 |
+|---|---|
+| `pnpm dev` | `http://localhost:3000`에서 개발 서버 실행 |
+| `pnpm build` | 프로덕션 빌드 생성 |
+| `pnpm start` | 프로덕션 서버 실행 |
+| `pnpm lint` | ESLint 검사 |
+| `pnpm test` | Vitest 단위·컴포넌트 테스트 |
+| `pnpm typecheck` | TypeScript 타입 검사 |
+| `pnpm e2e` | 목 BE·WS와 프로덕션 빌드를 사용한 Playwright E2E |
+| `pnpm e2e:ui` | Playwright UI 모드 실행 |
+| `pnpm e2e:burn` | 전 E2E를 5회 반복해 flaky 여부 확인 |
+
+```bash
+pnpm dev
+```
+
+## 애플리케이션 구성
+
+페이지 조회는 Server Component가 백엔드를 직접 호출합니다. 브라우저에서 발생하는 쓰기 요청은 같은 출처의 Next.js Route Handler(`/api/*`)를 거쳐 `estate-server`로 전달되며, 세션 토큰은 httpOnly 쿠키로 관리합니다. 채팅과 알림만 `NEXT_PUBLIC_WS_URL`의 Socket.IO 서버에 연결합니다.
+
+```text
+브라우저
+  ├─ 페이지 요청 ──> Next.js Server Component ──> estate-server
+  ├─ 쓰기 요청 ───> Next.js Route Handler ─────> estate-server
+  └─ 실시간 연결 ─> Socket.IO ─────────────────> estate-server
 ```
 
 ## 서브모듈로 클론하기
@@ -91,11 +152,36 @@ git submodule update --init --recursive
 
 ## 구조
 
-```
+```text
 app/
-  globals.css   # 디자인 시스템 v0 토큰(:root CSS 변수) + Tailwind @theme 매핑
-  layout.tsx    # 루트 레이아웃(Pretendard, 라이트 모드)
-  page.tsx      # 브랜드 진입 placeholder (로그인/회원가입 CTA)
+  (app)/              # 인증 후 화면(대시보드·게시판·채팅·알림·설정)
+  api/                # 브라우저 요청을 백엔드로 전달하는 Route Handler
+  auth/               # 카카오 OAuth 콜백
+  login/              # 로그인
+  signup/             # 역할별 회원가입
+  globals.css         # 디자인 토큰과 Tailwind @theme 매핑
+components/
+  auth/               # 인증·역할 선택 폼
+  board/              # 게시판 폼·목록·댓글·좋아요
+  building/           # 건물·호실·초대코드
+  chat/               # 채팅 시작·대화
+  dashboard/          # 역할별 대시보드
+  notifications/      # 알림 목록·실시간 provider
+  settings/           # 프로필·비밀번호·로그아웃
+  ui/                 # 공통 UI 컴포넌트
+lib/
+  api/                # 도메인별 백엔드 API 클라이언트
+  chat/               # WebSocket과 채팅 표시 로직
+  notifications/      # 알림 딥링크
+  query/              # TanStack Query key·mutation
+  constants.ts        # 경로·역할·스토리지 키 단일 출처
+  messages.ts         # 사용자 노출 문구 단일 출처
+  schemas.ts          # Zod 폼 검증 스키마
+e2e/
+  fixtures/           # 인증·목 데이터 픽스처
+  mock-be/            # E2E용 HTTP 백엔드
+  mock-ws/            # E2E용 Socket.IO 서버
+  tests/              # Playwright 핵심 사용자 흐름
+docs/                 # 설계·계획·테스트 문서
+test/                 # Vitest 공통 테스트 유틸
 ```
-
-온보딩(FE-M0) 화면은 구현됐습니다. 이후 단계는 위 **마일스톤** 표를 참고하세요.
