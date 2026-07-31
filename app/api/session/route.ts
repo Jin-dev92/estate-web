@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { backendLogin, ApiError } from "@/lib/api";
-import { setSession, clearSession } from "@/lib/session";
+import { setSessionPair, clearSession } from "@/lib/session";
 import { MESSAGES } from "@/lib/messages";
 
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
-    const { accessToken } = await backendLogin(email, password);
-    await setSession(accessToken);
+    const { accessToken, refreshToken } = await backendLogin(email, password);
+    await setSessionPair(accessToken, refreshToken);
     return NextResponse.json({ ok: true });
   } catch (e) {
     const err = e as ApiError;

@@ -15,11 +15,6 @@ export function refreshCookie(token: string) {
   return { name: REFRESH_COOKIE, value: token, options: cookieOptions(REFRESH_COOKIE_MAX_AGE) };
 }
 
-export async function setSession(token: string) {
-  const c = sessionCookie(token);
-  (await cookies()).set(c.name, c.value, c.options);
-}
-
 /**
  * 액세스·리프레시를 함께 심는다. 갱신은 회전이라 두 값은 항상 쌍으로 바뀐다 —
  * 한쪽만 갱신하면 다음 갱신에서 옛 리프레시 토큰을 제출해 가족이 폐기된다.
