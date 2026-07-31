@@ -231,12 +231,18 @@ String(field ?? "").trim()
 ## 한계
 - 목 BE라 실 BE 계약 불일치는 못 잡는다(각 레포 단위/통합 테스트 담당). E2E는 FE 컴포넌트 경계·플로우 회귀에 집중.
 
-## Playwright 공식 에이전트 (시험 도입)
+## Playwright 공식 에이전트 (조건부 유지)
 
-`npx playwright init-agents --loop=claude --prompts` 생성물 — Planner/Generator/Healer 서브에이전트(`.claude/agents/`), `playwright-test` MCP(`.mcp.json`), 프롬프트(`.claude/prompts/`). 배경·판단 근거는 `docs/test/playwright-agents-review.md`.
+`npx playwright init-agents --loop=claude --prompts` 생성물 — Planner/Generator/Healer 서브에이전트(`.claude/agents/`), `playwright-test` MCP(`.mcp.json`), 프롬프트(`.claude/prompts/`). 배경·시범 결과·판단 근거는 `docs/test/playwright-agents-review.md`.
 
+**평가 완료(2026-07-31): 조건부 유지.** 생성물 품질은 두 시범 모두 규약 준수율 100%·사람 수정 0건. 다만 MCP 서버가 이 레포의 고정 포트 구조와 잘 맞지 않아 **기본 도구로 쓰지 않고 선택적으로** 쓴다.
+
+- **언제 쓰나**: 화면이 복잡하거나 셀렉터가 불확실해서 "실제 DOM을 봐야 아는" 커버리지. 단순 리다이렉트·정적 문구 검증은 손으로 짜는 편이 빠르다.
+- **디스패치 전에 포트를 비운다**: `lsof -ti:3000,3098,3099 | xargs kill`. Healer는 도구 목록에 Bash가 없어 이걸 스스로 못 한다.
+- **MCP가 깨지면 세션을 재시작한다**: 건드리지 않은 스펙까지 `test.describe() called here`가 나오면 서버 상태 손상이다. 코드 문제로 오해하고 파헤치지 말 것.
+- **검증은 사람이 실행한다**: 에이전트의 "통과" 주장을 그대로 믿지 않는다. `pnpm e2e`·`pnpm e2e:burn`으로 직접 확인한다(두 시범 모두 에이전트가 검증을 완주하지 못했다).
 - **시드**: `e2e/tests/seed.spec.ts` — 에이전트가 환경 셋업(loginAs 인증)을 배우는 본보기. 셋업 규약이 바뀌면 시드도 갱신한다.
 - **Healer 결과물은 사람이 PR 리뷰로 확인 필수.** Healer가 넣는 `test.fixme()`(skip 처리)는 머지 금지 — "머지 전 수정" 원칙 유지.
 - **에이전트 생성물도 위 규칙(flaky 차단) 전부 적용**: 시멘틱 셀렉터·하드 대기 금지·burn-in·`MESSAGES`/`E2E_*` 단일출처. 리터럴이 보이면 상수화로 고쳐서 머지한다.
 - **테스트 계획 md는 예외적으로 루트 `specs/`에 둔다**(Planner 저장 위치가 하드코딩 — "문서는 docs/만" 규칙의 유일한 예외).
-- 시험 도입 상태: Healer(flaky 수리)·Generator(신규 커버리지 1건) 시범 사용 후 유지/확대/철회를 판단한다.
+- **재검토 조건**: Playwright가 MCP 안정성을 개선하거나 이 레포가 포트 고정을 벗어나면 확대를 다시 검토한다.
