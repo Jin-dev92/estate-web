@@ -59,6 +59,8 @@ export const MESSAGES = {
     startOwner: "건물주에게 문의하기",
     startTenant: "작성자와 채팅",
     starting: "여는 중…",
+    noMessages: "아직 주고받은 메시지가 없어요. 먼저 말을 건네보세요.",
+    backToList: "채팅 목록",
   },
   settings: {
     title: "설정",
