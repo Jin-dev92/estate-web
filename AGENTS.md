@@ -225,6 +225,7 @@ String(field ?? "").trim()
 - **하드 대기 금지**: `waitForTimeout` ❌ → `expect`의 auto-wait ✅.
 - **작성 직후 burn-in**: `pnpm e2e:burn`으로 반복, 한 번이라도 실패하면 머지 전 수정.
 - **BE는 목**(`e2e/mock-be/server.ts`): SSR·클라 호출 모두 `BACKEND_URL`로 목을 본다. 새 화면이 새 BE 경로를 부르면 목에 응답을 추가한다.
+- **목 응답은 반드시 타입드 빌더로 추가한다**(drift 게이트): `e2e/fixtures/mock-data.ts`에 함수를 만들고 반환 타입을 `lib/api`의 도메인 타입(`Lease`·`TokenPair` 등)이나 `Awaited<ReturnType<typeof backend*>>`로 애노테이트한 뒤 `server.ts`가 그 함수를 부른다. `send(res, 201, { ... })`처럼 **인라인 객체로 답하면 `send`의 `body: unknown` 때문에 타입 검사가 걸리지 않아** BE 계약이 바뀌어도 E2E가 초록으로 통과한다(false-green). 새 빌더를 넣었으면 해당 타입에 필드를 임시로 추가해 `pnpm typecheck`가 실패하는지 확인한다.
 - **인증 시작점**: `loginAs(context)`로 세션 쿠키 주입(로그인 UI 반복 금지).
 - **카피·경로**: 리터럴 하드코딩 금지 — `MESSAGES`·`SESSION_COOKIE` 등 단일출처 import.
 

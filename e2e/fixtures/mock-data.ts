@@ -9,10 +9,13 @@ import type {
   Unit,
   ChatRoom,
   Lease,
+  TokenPair,
+  KakaoLoginResult,
   backendSignup,
   backendPreviewInvite,
   backendRedeemInvite,
   backendIssueInvite,
+  backendUnreadCount,
 } from "../../lib/api";
 import { ROLE, POST_CATEGORY, NOTIFICATION_TYPE, LEASE_STATUS } from "../../lib/constants";
 import {
@@ -23,6 +26,9 @@ import {
   E2E_INVITE,
   E2E_BUILDING,
   E2E_CHAT,
+  E2E_KAKAO,
+  E2E_REFRESH,
+  E2E_SESSION_TOKEN,
 } from "./e2e-constants";
 
 // 목 응답을 lib/api 백엔드 함수의 반환 타입에 묶는다(drift 게이트).
@@ -31,6 +37,9 @@ type SignupResult = Awaited<ReturnType<typeof backendSignup>>;
 type InvitePreview = Awaited<ReturnType<typeof backendPreviewInvite>>;
 type RedeemResult = Awaited<ReturnType<typeof backendRedeemInvite>>;
 type IssuedInvite = Awaited<ReturnType<typeof backendIssueInvite>>;
+// 미읽음 개수는 lib/api에 이름 붙은 타입이 없다(`authGet<{count:number}>` 인라인).
+// 구조를 손으로 베끼면 이중 정의가 되므로 함수 반환 타입에서 역산한다.
+type UnreadCount = Awaited<ReturnType<typeof backendUnreadCount>>;
 
 // 목 응답을 lib/api 도메인 타입에 묶는다 — 계약(타입) 변경 시 여기서 타입에러가 나
 // CI typecheck가 실패하므로 E2E false-green(drift)을 방지한다.
@@ -164,7 +173,7 @@ export function mockNotifications(): Notification[] {
 }
 
 // 미읽음 개수 — mockNotifications()의 readAt=null 건수와 일치시킨다.
-export function mockUnreadCount(): { count: number } {
+export function mockUnreadCount(): UnreadCount {
   return { count: mockNotifications().filter((n) => n.readAt === null).length };
 }
 
@@ -190,7 +199,7 @@ export function getNotificationsFor(token: string): Notification[] {
   return mockNotifications().map((n) => (readIds.has(n.id) ? { ...n, readAt: n.readAt ?? now } : n));
 }
 
-export function unreadCountFor(token: string): { count: number } {
+export function unreadCountFor(token: string): UnreadCount {
   return { count: getNotificationsFor(token).filter((n) => n.readAt === null).length };
 }
 
@@ -240,4 +249,35 @@ export function mockUnit(): Unit {
 // 초대코드 발급(POST /units/:unitId/invite-codes) — 무상태라 고정 코드/만료를 표현.
 export function mockIssuedInvite(): IssuedInvite {
   return { code: E2E_BUILDING.issuedCode, expiresInSec: E2E_BUILDING.expiresInSec };
+}
+
+// ── 인증(auth) 응답 ───────────────────────────────────────────────────────────
+// 로그인·갱신·카카오는 원래 목 서버가 인라인 객체로 답하던 경로였다. send()의 body가
+// unknown이라 타입 검사가 걸리지 않아, BE가 토큰 응답 형태를 바꿔도 아무도 잡지 못했다.
+// 도메인 타입(TokenPair·KakaoLoginResult)에 묶어 drift 게이트 안으로 넣는다.
+
+// 로그인·카카오 성공 시 발급하는 토큰 쌍(POST /auth/login·/auth/kakao·/auth/kakao/complete).
+export function mockTokenPair(): TokenPair {
+  return { accessToken: E2E_SESSION_TOKEN, refreshToken: E2E_REFRESH.validToken };
+}
+
+// 갱신이 회전시킨 새 토큰 쌍(POST /auth/refresh).
+// 로그인 발급분과 값이 달라야 "교체 저장됐는지"를 E2E가 단언할 수 있다.
+export function mockRotatedTokenPair(): TokenPair {
+  return {
+    accessToken: E2E_REFRESH.rotatedAccessToken,
+    refreshToken: E2E_REFRESH.rotatedRefreshToken,
+  };
+}
+
+// 카카오 신규 유저 — 토큰 쌍 없이 온보딩 토큰만 오는 분기(POST /auth/kakao).
+// KakaoLoginResult가 유니온이라 이 형태도 계약의 일부다.
+export function mockKakaoOnboarding(): KakaoLoginResult {
+  return { onboardingToken: E2E_KAKAO.onboardingToken };
+}
+
+// 카카오 기존 유저 — 토큰 쌍이 오는 분기(POST /auth/kakao).
+// 반환 타입을 KakaoLoginResult로 두어 "이 경로의 계약은 유니온"임을 타입으로 남긴다.
+export function mockKakaoTokenPair(): KakaoLoginResult {
+  return mockTokenPair();
 }

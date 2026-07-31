@@ -78,11 +78,14 @@ Playwright로 프로덕션 빌드를 목 백엔드에 붙여 찍었습니다(`do
 
 ### 후속 백로그 (남은 작업)
 
-> 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`·카카오 로그인 E2E·채팅 재연결/connect_error/멀티유저 E2E)은 위 커버리지 표에 반영. 아래는 **남은 작업**만. 우선순위 순으로 정렬(2026-07-02 지정).
+> 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`·카카오 로그인 E2E·채팅 재연결/connect_error/멀티유저 E2E)은 위 커버리지 표에 반영. 아래는 **남은 작업**만. 우선순위 순으로 정렬(2026-07-31 재지정).
 
 - [x] **[완료] Playwright 공식 에이전트 시험 평가**: Generator·Healer 시범 모두 완료 → **조건부 유지**로 결론(`docs/test/playwright-agents-review.md` 9절). 두 시범 모두 규약 준수율 100%·사람 수정 0건이었고, 특히 Healer는 `test.fixme()`로 도망가지 않고 원인을 고쳤다. 다만 Healer의 차별 가치(실 DOM 라이브 디버깅)가 MCP 서버 불안정으로 실증되지 않아 **기본 도구로 확대하지 않고 선택적으로** 쓴다. 운영 규칙 5개는 검토 문서 9절, 요약은 `AGENTS.md` E2E 절.
-- [ ] 드리프트 게이트 확장: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
-- [ ] 테스트 typecheck 정비: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
+- [x] **[완료] 드리프트 게이트 확장**: leases·buildings는 이미 `mockLease(): Lease`·`mockBuilding(): Building`으로 편입돼 있었고, 전수 조사에서 드러난 실제 빈틈은 **auth 도메인이 통째로 게이트 밖**이었다(`send()`의 `body: unknown` 때문에 인라인 응답은 타입 검사가 걸리지 않음). 로그인·갱신·로그아웃·카카오 2경로를 `TokenPair`·`KakaoLoginResult`에 묶은 빌더로 옮기고, `unreadCount` 이중 정의도 함수 반환 타입 역산으로 정리했다. 뮤테이션으로 게이트 작동 실증(`TokenPair`에 필드 추가 → 편입 후 2건 검출 / 편입 전 0건).
+- [ ] **[우선순위 1] 에러 계약 편입**: 드리프트 게이트는 **성공 응답만** 덮는다. 목의 에러 응답(`401`·`400`)은 인라인 객체이고 대응 타입이 FE에 없어 무보호다. FE는 `errorMap`이 **status만** 보고 분기하는데(`lib/api/client.ts`) 그 status 계약이 검증되지 않는다 — 예: BE가 갱신 실패를 `401`→`403`으로 바꾸면 `proxy.ts`가 401만 세션 사망으로 취급하므로 **사용자가 무한 재시도 루프에 빠지는데 게이트도 E2E도 조용하다.** 편입하려면 BE의 에러 스키마(`AppException` 형태)를 FE에 타입으로 선언해야 하고, 그 타입을 FE가 실제로 소비할지(현재 `code`는 미사용, status만 씀) 함께 판단이 필요하다.
+- [ ] 테스트 typecheck 정비: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소. (참고: `e2e/`는 이미 typecheck 대상이다. 이 항목은 vitest 단위 테스트 쪽 exclude만 다룬다.)
+
+> **드리프트 게이트의 구조적 사각지대**(위 "에러 계약"으로도 덮이지 않음): 타입은 "어떤 모양의 데이터가 오는가"만 말하고 "그게 무슨 뜻이고 서버가 무슨 일을 하는가"는 말하지 않는다. ① 같은 타입 다른 의미(날짜 ISO→epoch, 금액 원→전), ② 동작·규칙 변경(권한 규칙, 상태 전이), ③ 부작용(`PATCH /auth/password`가 전체 세션을 폐기한다는 사실 — 응답은 `{ok:true}`)은 타입에 흔적이 없다. 실례로 M15의 BE 리프레시 로직은 "재사용 탐지(가족 폐기)"와 "경합 패배(가족 유지)"가 **응답·에러 코드까지 동일한 401**인데 그 차이가 FE single-flight 설계의 전제였다. 이 층위는 BE 레포의 단위·통합 테스트가 담당하고(`AGENTS.md` E2E 절의 역할 분담), FE에서 더 밀려면 계약 테스트(Pact 류)나 BE OpenAPI 스키마 생성이 필요하다.
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
 
