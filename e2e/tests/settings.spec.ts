@@ -36,7 +36,7 @@ test("이름을 수정하면 재조회에 반영된다(영속성)", async ({ pag
   await expect(page.getByLabel(MESSAGES.settings.name)).toHaveValue(name, { timeout: 20_000 });
 });
 
-test("비밀번호를 변경하면 성공 메시지를 보인다(성공경로)", async ({ page, context }) => {
+test("비밀번호를 변경하면 로그인 화면으로 이동한다(성공경로)", async ({ page, context }) => {
   await loginAs(context);
   await page.goto("/settings");
 
@@ -49,7 +49,10 @@ test("비밀번호를 변경하면 성공 메시지를 보인다(성공경로)",
     page.getByRole("button", { name: MESSAGES.settings.changePassword }).click(),
   ]);
   expect(res.ok()).toBe(true);
-  await expect(page.getByText(MESSAGES.settings.passwordChanged)).toBeVisible();
+
+  // BE가 비밀번호 변경 성공 시 본인 포함 전체 세션을 폐기한다 — FE는 로그인 화면으로 보낸다.
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByRole("button", { name: MESSAGES.auth.login, exact: true })).toBeVisible();
 });
 
 test("현재 비밀번호가 틀리면 에러를 보인다", async ({ page, context }) => {
@@ -71,8 +74,9 @@ test("비밀번호 폼은 현재 비밀번호가 비면 검증 에러를 보이�
   await page.getByLabel(MESSAGES.settings.newPassword).fill("newpassword123");
   await page.getByRole("button", { name: MESSAGES.settings.changePassword }).click();
 
-  await expect(page.getByText(MESSAGES.form.invalidInput)).toBeVisible();
-  await expect(page.getByText(MESSAGES.settings.passwordChanged)).not.toBeVisible();
+  // 위 검증 에러 단언이 "RHF가 제출을 막았다"를 이미 확인한다.
+  // 성공 문구 부재를 덧붙이던 단언은 성공 시 로그인으로 이동하게 바뀐 뒤
+  // 렌더될 일이 없어져 자명하게 참이 됐으므로 제거했다.
 });
 
 test("로그아웃하면 로그인 페이지로 이동한다", async ({ page, context }) => {

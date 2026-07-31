@@ -1,5 +1,38 @@
-/** httpOnly 세션 쿠키 이름 (서버 라우트·미들웨어 공유 단일 출처) */
+/** httpOnly 세션(액세스 토큰) 쿠키 이름 (서버 라우트·proxy 공유 단일 출처) */
 export const SESSION_COOKIE = "session";
+
+/** httpOnly 리프레시 토큰 쿠키 이름. 액세스 토큰 만료 시 갱신에만 쓴다. */
+export const REFRESH_COOKIE = "refresh";
+
+/**
+ * 쿠키 수명(초). 백엔드 토큰 수명과 맞춘다 — 어긋나면
+ * 쿠키는 있는데 토큰이 죽었거나(401), 토큰은 살았는데 쿠키가 없는(불필요한 갱신) 상태가 된다.
+ * BE 기준: JWT_EXPIRES_IN=15m, 리프레시 14일.
+ */
+export const ACCESS_COOKIE_MAX_AGE = 60 * 15;
+export const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 14;
+
+/**
+ * 세션 쿠키 옵션 빌더. `lib/session.ts`(Route Handler)와 `proxy.ts` 양쪽이 공유한다.
+ *
+ * 왜 여기 있는가: 갱신은 proxy에서 일어나고 로그인은 Route Handler에서 일어나는데,
+ * 두 곳이 심는 쿠키의 옵션이 어긋나면 수명·전송 범위가 달라진다. `lib/session.ts`는
+ * `next/headers`에 의존해 proxy에서 재사용할 수 없으므로, 순수한 옵션 부분만
+ * 여기로 내려 단일 출처로 둔다. (이 파일에 함수를 두는 선례는 `kakaoAuthorizeUrl`.)
+ */
+export function cookieOptions(maxAge: number) {
+  return {
+    httpOnly: true as const,
+    // 실서비스(HTTPS)에선 secure. 단 E2E는 프로덕션 빌드를 http://localhost로 띄우는데
+    // webkit은 localhost에서도 secure 쿠키를 저장하지 않아(chromium/firefox는 예외 허용)
+    // 세션이 안 잡힌다. E2E_INSECURE_COOKIE=1일 때만 secure를 꺼 이 환경 아티팩트를 회피한다.
+    secure: process.env.NODE_ENV === "production" && process.env.E2E_INSECURE_COOKIE !== "1",
+    sameSite: "lax" as const,
+    // path를 좁히지 않는다 — proxy가 모든 경로에서 리프레시 쿠키를 읽어야 갱신이 동작한다.
+    path: "/",
+    maxAge,
+  };
+}
 
 /** 자가 가입 가능 역할 (닫힌 집합 → as const + 파생 유니온) */
 export const ROLE = { OWNER: "OWNER", TENANT: "TENANT" } as const;
@@ -28,6 +61,7 @@ export const API_ROUTES = {
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
   profile: "/api/profile",
   profilePassword: "/api/profile/password",
+  authPrefix: "/api/auth",
   kakao: "/api/auth/kakao",
   kakaoComplete: "/api/auth/kakao/complete",
 } as const;

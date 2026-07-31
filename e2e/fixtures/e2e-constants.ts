@@ -18,6 +18,17 @@ export const E2E_SESSION_TOKEN = "e2e-token";
 // (대시보드 OWNER 홈 렌더 검증용). loginAsOwner 픽스처가 주입한다.
 export const E2E_OWNER_TOKEN = "e2e-owner-token";
 
+// 리프레시 토큰 E2E 결합 상수(목 BE와 테스트가 공유).
+// 목 /auth/refresh는 deadToken이면 401, 그 외엔 회전된 새 쌍을 발급한다(무상태 sentinel).
+export const E2E_REFRESH = {
+  validToken: "e2e-refresh-token",
+  deadToken: "e2e-refresh-dead",
+  // 갱신으로 새로 발급되는 액세스 토큰. 목 /auth/me가 TENANT를 반환하도록
+  // E2E_SESSION_TOKEN을 prefix로 유지한다(역할 판별이 .includes 기반).
+  rotatedAccessToken: `${E2E_SESSION_TOKEN}-rotated`,
+  rotatedRefreshToken: "e2e-refresh-token-rotated",
+} as const;
+
 // 게시판 E2E 결합 상수(목 BE와 테스트가 공유).
 export const E2E_BOARD = {
   buildingId: "b-e2e",

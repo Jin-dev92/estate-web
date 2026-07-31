@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { MESSAGES } from "../../lib/messages";
-import { E2E_KAKAO } from "../fixtures/e2e-constants";
+import { E2E_KAKAO, E2E_REFRESH } from "../fixtures/e2e-constants";
 import { gotoKakaoCallback } from "../fixtures/kakao";
+import { REFRESH_COOKIE } from "../../lib/constants";
 
-test("기존 카카오 연동 계정으로 콜백에 진입하면 대시보드로 이동한다", async ({ page }) => {
+test("기존 카카오 연동 계정으로 콜백에 진입하면 대시보드로 이동한다", async ({ page, context }) => {
   await gotoKakaoCallback(page, {
     code: E2E_KAKAO.existingCode,
     urlState: "state-existing",
@@ -13,6 +14,10 @@ test("기존 카카오 연동 계정으로 콜백에 진입하면 대시보드�
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByText("터전")).toBeVisible();
   await expect(page.getByRole("heading", { name: "내 계약" })).toBeVisible();
+
+  // 카카오 로그인도 리프레시 쿠키를 심어야 15분 뒤 자동 갱신이 가능하다.
+  const cookies = await context.cookies();
+  expect(cookies.find((c) => c.name === REFRESH_COOKIE)?.value).toBe(E2E_REFRESH.validToken);
 });
 
 test("신규 카카오 사용자는 역할 선택 후 대시보드로 이동한다", async ({ page }) => {

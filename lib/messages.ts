@@ -70,7 +70,6 @@ export const MESSAGES = {
     changePassword: "비밀번호 변경",
     currentPassword: "현재 비밀번호",
     newPassword: "새 비밀번호(8자 이상)",
-    passwordChanged: "비밀번호를 변경했어요.",
     updateFailed: "변경하지 못했어요. 잠시 후 다시 시도해주세요.",
     wrongCurrentPassword: "현재 비밀번호가 일치하지 않습니다.",
     logout: "로그아웃",
