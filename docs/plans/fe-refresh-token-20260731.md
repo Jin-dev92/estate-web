@@ -1133,7 +1133,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **Files:**
 - Modify: `app/api/session/route.ts:18-21` (DELETE)
-- Test: `test/session-logout.test.ts` (위치는 `vitest.config.ts` 확인 후 결정)
+- Test: `app/api/session/route.test.ts` (기존 관례가 co-location입니다 — `lib/session.test.ts`, `lib/api/client.test.ts`. `test/`에는 헬퍼만 둡니다)
 
 **Interfaces:**
 - Consumes: `backendLogout(refreshToken)` (Task 2), `getRefreshToken()`·`clearSession()` (Task 1)
@@ -1212,7 +1212,7 @@ it("리프레시 쿠키가 없으면 BE를 부르지 않고 쿠키만 지운다"
 
 - [ ] **Step 2: 테스트가 실패하는 것을 확인한다**
 
-Run: `pnpm test session-logout`
+Run: `pnpm test app/api/session/route.test.ts`
 Expected: FAIL — `backendLogout`이 호출되지 않음(현재 DELETE는 `clearSession`만 부름)
 
 - [ ] **Step 3: `app/api/session/route.ts`의 DELETE를 교체한다**
@@ -1244,7 +1244,7 @@ import { setSessionPair, clearSession, getRefreshToken } from "@/lib/session";
 
 - [ ] **Step 4: 테스트가 통과하는 것을 확인한다**
 
-Run: `pnpm test session-logout`
+Run: `pnpm test app/api/session/route.test.ts`
 Expected: PASS (3 tests)
 
 - [ ] **Step 5: 뮤테이션으로 확인한다**
@@ -1259,7 +1259,7 @@ Expected: 전부 통과
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add app/api/session/route.ts test/
+git add app/api/session/route.ts app/api/session/route.test.ts
 git commit -m "[M15]auth: 로그아웃 시 서버 세션도 폐기
 
 쿠키만 지우면 리프레시 토큰이 14일간 서버에 살아있다.
