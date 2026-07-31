@@ -61,6 +61,7 @@ export const API_ROUTES = {
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
   profile: "/api/profile",
   profilePassword: "/api/profile/password",
+  authPrefix: "/api/auth",
   kakao: "/api/auth/kakao",
   kakaoComplete: "/api/auth/kakao/complete",
 } as const;

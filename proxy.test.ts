@@ -1,10 +1,15 @@
 import { beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import {
   SESSION_COOKIE,
   REFRESH_COOKIE,
+  ACCESS_COOKIE_MAX_AGE,
+  REFRESH_COOKIE_MAX_AGE,
   PAGE_ROUTES,
+  API_ROUTES,
 } from "@/lib/constants";
+import { config } from "@/proxy";
 
 const refreshSession = vi.fn();
 vi.mock("@/lib/refresh", () => ({ refreshSession: (t: string) => refreshSession(t) }));
@@ -52,6 +57,10 @@ it("갱신 성공 시 새 토큰 쌍을 응답 쿠키에 심는다", async () =>
   // 회전한 리프레시 토큰도 교체 저장해야 한다 — 안 하면 다음 갱신에서
   // 옛 토큰을 제출해 가족이 폐기된다.
   expect(res.cookies.get(REFRESH_COOKIE)?.value).toBe("r2");
+  // 쿠키 수명 = 토큰 수명이 갱신 트리거 신호다. cookieOptions가 빠지면
+  // 액세스 쿠키가 세션 쿠키가 되어 15분 뒤에도 안 사라지고, 갱신이 조용히 멈춘다.
+  expect(res.cookies.get(SESSION_COOKIE)?.maxAge).toBe(ACCESS_COOKIE_MAX_AGE);
+  expect(res.cookies.get(REFRESH_COOKIE)?.maxAge).toBe(REFRESH_COOKIE_MAX_AGE);
 });
 
 it("갱신 성공 시 이번 요청의 렌더 코드도 새 액세스 토큰을 본다", async () => {
@@ -65,6 +74,9 @@ it("갱신 성공 시 이번 요청의 렌더 코드도 새 액세스 토큰을 
   await proxy(req);
 
   expect(req.cookies.get(SESSION_COOKIE)?.value).toBe("a2");
+  // 다음 태스크(로그아웃의 BE 세션 폐기)가 이 값을 읽는다. 빠지면 옛 토큰을
+  // 제출해 가족 폐기 경로가 열린다.
+  expect(req.cookies.get(REFRESH_COOKIE)?.value).toBe("r2");
 });
 
 it("갱신 실패 시 두 쿠키를 모두 지운다", async () => {
@@ -81,6 +93,18 @@ it("갱신 실패 시 두 쿠키를 모두 지운다", async () => {
   expect(res.cookies.get(SESSION_COOKIE)?.value).toBeFalsy();
   expect(res.cookies.get(REFRESH_COOKIE)).toBeDefined();
   expect(res.cookies.get(REFRESH_COOKIE)?.value).toBeFalsy();
+});
+
+it("갱신 실패가 401이 아니면(순단·5xx) 쿠키를 지우지 않는다", async () => {
+  // BE 배포 중 502처럼 복구 가능한 에러다. 여기서 리프레시 쿠키를 지우면
+  // 배포 순간 만료 구간에 있던 사용자 전원이 로그아웃된다.
+  const proxy = await freshProxy();
+  refreshSession.mockRejectedValue(Object.assign(new Error("500"), { status: 500 }));
+
+  const res = await proxy(makeReq(PAGE_ROUTES.dashboard, { refresh: "r1" }));
+
+  expect(res.cookies.get(SESSION_COOKIE)).toBeUndefined();
+  expect(res.cookies.get(REFRESH_COOKIE)).toBeUndefined();
 });
 
 it("갱신 실패 시 보호 경로는 로그인으로 보낸다", async () => {
@@ -120,4 +144,30 @@ it("세션이 없으면 보호 경로에서 로그인으로 보낸다(기존 동
   const res = await proxy(makeReq(PAGE_ROUTES.dashboard));
   expect(res.status).toBe(307);
   expect(res.headers.get("location")).toContain(PAGE_ROUTES.login);
+});
+
+it("게시판 경로에서도 갱신이 일어난다", async () => {
+  // matcher를 옛 값(/dashboard·/login·/signup)으로 되돌리면 이 테스트가 잡는다.
+  const proxy = await freshProxy();
+  refreshSession.mockResolvedValue({ accessToken: "a2", refreshToken: "r2" });
+
+  await proxy(makeReq(PAGE_ROUTES.boardHome, { refresh: "r1" }));
+
+  expect(refreshSession).toHaveBeenCalledWith("r1");
+});
+
+it("matcher가 앱 경로·내부 API를 잡고 정적 자산은 제외한다", () => {
+  const matchedUrls = [
+    PAGE_ROUTES.boardHome,
+    PAGE_ROUTES.chat,
+    PAGE_ROUTES.settings,
+    PAGE_ROUTES.notifications,
+    API_ROUTES.buildings,
+  ];
+  for (const url of matchedUrls) {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
+  }
+  expect(
+    unstable_doesMiddlewareMatch({ config, url: "/_next/static/chunks/main.js" }),
+  ).toBe(false);
 });

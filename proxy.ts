@@ -5,16 +5,18 @@ import {
   ACCESS_COOKIE_MAX_AGE,
   REFRESH_COOKIE_MAX_AGE,
   PAGE_ROUTES,
+  API_ROUTES,
   cookieOptions,
 } from "@/lib/constants";
 import { refreshSession } from "@/lib/refresh";
+import { ApiError } from "@/lib/api";
 
 const AUTH_PAGES = [PAGE_ROUTES.login, PAGE_ROUTES.signup];
 const PROTECTED = [PAGE_ROUTES.dashboard];
 
 // 인증을 새로 시작하는 경로. 여기서 갱신이 돌면 로그아웃 직후 남은 쿠키로
 // 세션이 되살아나는 혼란이 생긴다. 갱신만 건너뛰고 리다이렉트 판정은 유지한다.
-const NO_REFRESH_PREFIXES = [PAGE_ROUTES.login, PAGE_ROUTES.signup, "/api/session", "/api/auth"];
+const NO_REFRESH_PREFIXES = [PAGE_ROUTES.login, PAGE_ROUTES.signup, API_ROUTES.session, API_ROUTES.authPrefix];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -40,14 +42,17 @@ export async function proxy(req: NextRequest) {
       res.cookies.set(SESSION_COOKIE, pair.accessToken, cookieOptions(ACCESS_COOKIE_MAX_AGE));
       res.cookies.set(REFRESH_COOKIE, pair.refreshToken, cookieOptions(REFRESH_COOKIE_MAX_AGE));
       return res;
-    } catch {
-      // 무효·재사용 탐지·만료 모두 여기로 온다(BE가 의도적으로 401 하나로 묶었다).
-      // 죽은 쿠키를 남기면 매 요청마다 갱신을 시도해 401을 반복하므로 지운다.
+    } catch (e) {
+      // 401만 "리프레시 토큰이 죽었다"는 신호다. 순단·5xx에 쿠키를 지우면
+      // 복구 가능한 사용자의 14일 세션을 날린다(배포마다 만료 구간 사용자 전원 로그아웃).
+      const isAuthFailure = (e as ApiError).status === 401;
       const res = PROTECTED.some((p) => pathname.startsWith(p))
         ? NextResponse.redirect(new URL(PAGE_ROUTES.login, req.url))
         : NextResponse.next();
-      res.cookies.delete(SESSION_COOKIE);
-      res.cookies.delete(REFRESH_COOKIE);
+      if (isAuthFailure) {
+        res.cookies.delete(SESSION_COOKIE);
+        res.cookies.delete(REFRESH_COOKIE);
+      }
       return res;
     }
   }
