@@ -67,6 +67,11 @@ const server = createServer(async (req, res) => {
   if (url === "/health" && method === "GET") return send(res, 200, { ok: true });
 
   // 로그인: failEmail 이면 401, 그 외엔 토큰 발급(무상태 분기).
+  //
+  // drift 게이트 범위 주의: 성공 응답은 타입드 빌더(mock*)로 lib/api 도메인 타입에 묶여
+  // 있지만 **에러 응답은 인라인이라 무보호**다(대응 타입이 FE에 없다). FE는 status만
+  // 보고 errorMap으로 분기하므로, BE가 status를 바꾸면(401→403 등) 여기도 E2E도
+  // 조용히 통과한다. 편입은 README 후속 백로그 "에러 계약 편입" 항목.
   if (url === "/auth/login" && method === "POST") {
     const body = await readJson(req);
     if (body.email === E2E_CREDENTIALS.failEmail) {
