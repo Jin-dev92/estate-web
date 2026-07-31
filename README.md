@@ -4,6 +4,15 @@
 백엔드 [estate-server](https://github.com/Jin-dev92/estate-server-kafka)(NestJS · Prisma · Kafka)의
 **git 서브모듈**(`web/`)로 관리됩니다.
 
+## 화면
+
+<p align="center">
+  <img src="docs/screenshots/screens.gif" alt="터전 주요 화면 — 로그인, 입주자 대시보드, 게시판, 게시글, 채팅, 알림, 설정, 건물주 대시보드, 건물 관리, 호실 관리" width="1000">
+</p>
+
+로그인 → 입주자 대시보드 → 게시판 → 게시글 → 1:1 채팅 → 알림 → 설정 → 건물주 대시보드 → 건물 관리 → 호실 관리 순서로 전환됩니다.
+Playwright로 프로덕션 빌드를 목 백엔드에 붙여 찍었습니다(`docs/guides/screenshots.md`).
+
 ## 스택
 
 - **Next.js 16** (App Router) · **React 19** · **TypeScript**
