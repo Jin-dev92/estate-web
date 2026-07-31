@@ -29,7 +29,9 @@ export function PasswordForm() {
       reset();
       // BE가 비밀번호 변경 성공 시 본인 포함 전체 세션을 폐기한다.
       // 쿠키를 남기면 서버 세션이 죽은 상태로 앱을 쓰다가 알 수 없는 실패를 만난다.
-      await fetch(API_ROUTES.session, { method: "DELETE" });
+      // 쿠키 정리가 실패해도 로그인 화면으로는 보낸다 — 여기서 예외가 나면
+      // 서버 세션이 죽은 채 설정 페이지에 남아, 이 변경이 없애려던 상태가 그대로 재현된다.
+      await fetch(API_ROUTES.session, { method: "DELETE" }).catch(() => {});
       router.replace(PAGE_ROUTES.login);
     } else {
       const json = await res.json().catch(() => ({}));

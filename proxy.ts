@@ -9,7 +9,9 @@ import {
   cookieOptions,
 } from "@/lib/constants";
 import { refreshSession } from "@/lib/refresh";
-import { ApiError } from "@/lib/api";
+// 타입 위치에서만 쓴다 — 값으로 import하면 SWC가 제거하지 못해 API 배럴 전체를
+// proxy 번들로 끌고 온다.
+import type { ApiError } from "@/lib/api";
 
 const AUTH_PAGES = [PAGE_ROUTES.login, PAGE_ROUTES.signup];
 const PROTECTED = [PAGE_ROUTES.dashboard];
