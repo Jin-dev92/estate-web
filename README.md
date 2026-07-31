@@ -81,7 +81,7 @@ Playwright로 프로덕션 빌드를 목 백엔드에 붙여 찍었습니다(`do
 > 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`·카카오 로그인 E2E·채팅 재연결/connect_error/멀티유저 E2E)은 위 커버리지 표에 반영. 아래는 **남은 작업**만. 우선순위 순으로 정렬(2026-07-02 지정).
 
 - [x] **[완료] Playwright 공식 에이전트 시험 평가**: Generator·Healer 시범 모두 완료 → **조건부 유지**로 결론(`docs/test/playwright-agents-review.md` 9절). 두 시범 모두 규약 준수율 100%·사람 수정 0건이었고, 특히 Healer는 `test.fixme()`로 도망가지 않고 원인을 고쳤다. 다만 Healer의 차별 가치(실 DOM 라이브 디버깅)가 MCP 서버 불안정으로 실증되지 않아 **기본 도구로 확대하지 않고 선택적으로** 쓴다. 운영 규칙 5개는 검토 문서 9절, 요약은 `AGENTS.md` E2E 절.
-- [ ] 드리프트 게이트 확장: leases · buildings 플로우가 실 픽스처로 채워지면 `mockLease()`·`mockBuilding()` 등 타입드 빌더로 편입(알림은 `mockNotifications()`로 편입 완료).
+- [x] **[완료] 드리프트 게이트 확장**: leases·buildings는 이미 `mockLease(): Lease`·`mockBuilding(): Building`으로 편입돼 있었고, 전수 조사에서 드러난 실제 빈틈은 **auth 도메인이 통째로 게이트 밖**이었다(`send()`의 `body: unknown` 때문에 인라인 응답은 타입 검사가 걸리지 않음). 로그인·갱신·로그아웃·카카오 2경로를 `TokenPair`·`KakaoLoginResult`에 묶은 빌더로 옮기고, `unreadCount` 이중 정의도 함수 반환 타입 역산으로 정리했다. 뮤테이션으로 게이트 작동 실증(`TokenPair`에 필드 추가 → 편입 후 2건 검출 / 편입 전 0건).
 - [ ] 테스트 typecheck 정비: `tsconfig.vitest.json` 분리 + `vi.fn()` 파라미터 타입화(약 44건) + `**/*.test.*` exclude 제거 — 현재 루트 tsconfig의 `types:["vitest/globals"]` 스톱갭 해소.
 
 > 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.

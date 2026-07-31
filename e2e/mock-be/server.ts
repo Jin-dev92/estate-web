@@ -1,7 +1,6 @@
 import { createServer } from "node:http";
 import {
   E2E_CREDENTIALS,
-  E2E_SESSION_TOKEN,
   E2E_OWNER_TOKEN,
   E2E_KAKAO,
   E2E_REFRESH,
@@ -27,6 +26,10 @@ import {
   mockIssuedInvite,
   mockChatRoom,
   mockLease,
+  mockTokenPair,
+  mockRotatedTokenPair,
+  mockKakaoOnboarding,
+  mockKakaoTokenPair,
 } from "../fixtures/mock-data";
 
 const PORT = 3099;
@@ -74,10 +77,7 @@ const server = createServer(async (req, res) => {
         message: "이메일 또는 비밀번호가 올바르지 않습니다.",
       });
     }
-    return send(res, 201, {
-      accessToken: E2E_SESSION_TOKEN,
-      refreshToken: E2E_REFRESH.validToken,
-    });
+    return send(res, 201, mockTokenPair());
   }
 
   // 갱신(POST /auth/refresh) — 공개. deadToken이면 401, 그 외엔 회전된 새 쌍 발급.
@@ -91,10 +91,7 @@ const server = createServer(async (req, res) => {
         message: "리프레시 토큰이 유효하지 않습니다.",
       });
     }
-    return send(res, 201, {
-      accessToken: E2E_REFRESH.rotatedAccessToken,
-      refreshToken: E2E_REFRESH.rotatedRefreshToken,
-    });
+    return send(res, 201, mockRotatedTokenPair());
   }
 
   // 로그아웃(POST /auth/logout) — 공개·멱등. 무상태라 성공만 표현한다.
@@ -122,12 +119,9 @@ const server = createServer(async (req, res) => {
     }
     if (body.code === E2E_KAKAO.newCode) {
       // 신규 유저는 토큰 쌍 없이 온보딩 토큰만 — 이 분기의 정의다.
-      return send(res, 201, { onboardingToken: E2E_KAKAO.onboardingToken });
+      return send(res, 201, mockKakaoOnboarding());
     }
-    return send(res, 201, {
-      accessToken: E2E_SESSION_TOKEN,
-      refreshToken: E2E_REFRESH.validToken,
-    });
+    return send(res, 201, mockKakaoTokenPair());
   }
 
   // 카카오 온보딩 완료(POST /auth/kakao/complete) — onboardingToken이 유효할 때만 accessToken 발급.
@@ -140,10 +134,7 @@ const server = createServer(async (req, res) => {
         message: "잘못된 온보딩 토큰입니다.",
       });
     }
-    return send(res, 201, {
-      accessToken: E2E_SESSION_TOKEN,
-      refreshToken: E2E_REFRESH.validToken,
-    });
+    return send(res, 201, mockTokenPair());
   }
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
