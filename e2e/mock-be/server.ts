@@ -1,5 +1,11 @@
 import { createServer } from "node:http";
-import { E2E_CREDENTIALS, E2E_SESSION_TOKEN, E2E_OWNER_TOKEN, E2E_KAKAO } from "../fixtures/e2e-constants";
+import {
+  E2E_CREDENTIALS,
+  E2E_SESSION_TOKEN,
+  E2E_OWNER_TOKEN,
+  E2E_KAKAO,
+  E2E_REFRESH,
+} from "../fixtures/e2e-constants";
 import {
   mockMe,
   mockOwnerMe,
@@ -68,7 +74,32 @@ const server = createServer(async (req, res) => {
         message: "이메일 또는 비밀번호가 올바르지 않습니다.",
       });
     }
-    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
+    return send(res, 201, {
+      accessToken: E2E_SESSION_TOKEN,
+      refreshToken: E2E_REFRESH.validToken,
+    });
+  }
+
+  // 갱신(POST /auth/refresh) — 공개. deadToken이면 401, 그 외엔 회전된 새 쌍 발급.
+  // 실제 BE는 무효·재사용·만료를 모두 401 하나로 묶는다(공격자에게 내부 상태를 안 알림).
+  if (url === "/auth/refresh" && method === "POST") {
+    const body = await readJson(req);
+    if (body.refreshToken === E2E_REFRESH.deadToken) {
+      return send(res, 401, {
+        statusCode: 401,
+        code: "AUTH_INVALID_REFRESH_TOKEN",
+        message: "리프레시 토큰이 유효하지 않습니다.",
+      });
+    }
+    return send(res, 201, {
+      accessToken: E2E_REFRESH.rotatedAccessToken,
+      refreshToken: E2E_REFRESH.rotatedRefreshToken,
+    });
+  }
+
+  // 로그아웃(POST /auth/logout) — 공개·멱등. 무상태라 성공만 표현한다.
+  if (url === "/auth/logout" && method === "POST") {
+    return send(res, 201, { ok: true });
   }
 
   // 회원가입(무상태) — 생성 성공만 표현. Next 라우트가 이어서 /auth/login으로 토큰을 받는다.
@@ -90,9 +121,13 @@ const server = createServer(async (req, res) => {
       });
     }
     if (body.code === E2E_KAKAO.newCode) {
+      // 신규 유저는 토큰 쌍 없이 온보딩 토큰만 — 이 분기의 정의다.
       return send(res, 201, { onboardingToken: E2E_KAKAO.onboardingToken });
     }
-    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
+    return send(res, 201, {
+      accessToken: E2E_SESSION_TOKEN,
+      refreshToken: E2E_REFRESH.validToken,
+    });
   }
 
   // 카카오 온보딩 완료(POST /auth/kakao/complete) — onboardingToken이 유효할 때만 accessToken 발급.
@@ -105,7 +140,10 @@ const server = createServer(async (req, res) => {
         message: "잘못된 온보딩 토큰입니다.",
       });
     }
-    return send(res, 201, { accessToken: E2E_SESSION_TOKEN });
+    return send(res, 201, {
+      accessToken: E2E_SESSION_TOKEN,
+      refreshToken: E2E_REFRESH.validToken,
+    });
   }
 
   // 인증 사용자 정보(서명 검증 없음 — 목).
