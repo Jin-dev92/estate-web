@@ -67,6 +67,22 @@ it("결과 공유는 TTL이 지나면 끝난다", async () => {
   expect(backendRefresh).toHaveBeenCalledTimes(2);
 });
 
+it("TTL 안에서는 결과를 공유하고, TTL을 넘기면 다시 갱신한다", async () => {
+  // 경계 테스트: 기존 두 테스트만으로는 (0, 60_000) 구간의 아무 TTL 값이나
+  // 통과한다. TTL 직전/직후를 찍어 지속 시간을 잠근다.
+  const refreshSession = await freshRefreshSession();
+  backendRefresh.mockResolvedValue({ accessToken: "a2", refreshToken: "r2" });
+
+  await refreshSession("r1");
+  await vi.advanceTimersByTimeAsync(9_999);
+  await refreshSession("r1");
+  expect(backendRefresh).toHaveBeenCalledTimes(1); // 아직 공유 중
+
+  await vi.advanceTimersByTimeAsync(2);
+  await refreshSession("r1");
+  expect(backendRefresh).toHaveBeenCalledTimes(2); // 만료 후 재갱신
+});
+
 it("실패는 공유하지 않는다 — 다음 요청이 다시 시도할 수 있다", async () => {
   // 네트워크 순단으로 한 번 실패한 것을 TTL 동안 붙잡아두면
   // 복구 가능한 사용자를 로그인 화면으로 보낸다.

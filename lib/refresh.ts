@@ -23,6 +23,13 @@ const RESULT_TTL_MS = 10_000;
  * 승격한다. Next docs가 proxy에서 공유 모듈 의존을 권하지 않지만(proxy.md:19,
  * CDN 분산 배포 전제), proxy 런타임은 nodejs 고정이라 단일 프로세스 안에서는
  * 동작한다.
+ *
+ * ponytail: RESULT_TTL_MS(10초)를 넘겨 도착하는 요청은 여전히 옛 토큰을 들고
+ * 있으면 가족 폐기를 유발한다 — 서버리스 콜드 스타트, 느린 SSR 뒤 큐잉된 요청,
+ * 백그라운드 탭 복귀, 모바일 네트워크 지연이 이 구간에 들어간다. 10초는
+ * "한 페이지 로드의 병렬 요청"을 덮는 휴리스틱이지 보장이 아니다. 이 절벽까지
+ * 없애려면 옛→새 토큰 매핑을 세션 가족 단위로 더 길게(예: 액세스 토큰 수명만큼)
+ * 보관해 늦게 도착한 옛 토큰도 새 토큰으로 매핑해주는 방식으로 승격한다.
  */
 const inFlight = new Map<string, Promise<TokenPair>>();
 
@@ -41,13 +48,18 @@ export function refreshSession(refreshToken: string): Promise<TokenPair> {
     () => {
       // 성공은 TTL 동안 남긴다(위 RESULT_TTL_MS 주석 참고).
       // unref로 타이머가 프로세스 종료를 붙잡지 않게 한다(테스트·서버리스 환경).
-      const timer = setTimeout(() => inFlight.delete(refreshToken), RESULT_TTL_MS);
+      // identity 체크: 이 타이머가 예약된 뒤 이 항목이 지워지고 같은 키로
+      // 새 항목이 들어오면, 발화 시점에 옛 타이머가 그 새 항목까지 지우지
+      // 않게 막는다(무효화 경로가 늘어나도 안전).
+      const timer = setTimeout(() => {
+        if (inFlight.get(refreshToken) === pending) inFlight.delete(refreshToken);
+      }, RESULT_TTL_MS);
       timer.unref?.();
     },
     () => {
       // 실패는 즉시 비운다 — 순단으로 한 번 실패한 것을 붙잡아두면
       // 복구 가능한 사용자를 로그인 화면으로 보낸다.
-      inFlight.delete(refreshToken);
+      if (inFlight.get(refreshToken) === pending) inFlight.delete(refreshToken);
     },
   );
 
