@@ -58,17 +58,23 @@ export function ChatConversation({ token, roomId, myId, initial }: Props) {
       {error && <p className="rounded-[12px] bg-danger/10 px-4 py-2 text-[13px] text-danger">{error}</p>}
       {!error && !connected && <p className="text-[13px] text-text-3">{MESSAGES.chat.disconnected}</p>}
 
-      <div className="flex flex-col gap-2 pb-2">
-        {messages.map((m) => {
-          const mine = m.senderId === myId;
-          return (
-            <div key={m.messageId} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[78%] whitespace-pre-wrap rounded-[16px] px-4 py-2.5 text-[15px] ${mine ? "bg-brand-500 text-white" : "bg-surface-2 text-text"}`}>
-                {m.content}
+      {/* 대화 영역이 남는 높이를 차지해야 입력창이 아래에 붙는다. 높이를 주지 않으면
+          메시지가 없을 때 컨테이너가 0이 되어 sticky 입력창이 화면 상단으로 올라온다. */}
+      <div className="flex min-h-[58vh] flex-col justify-end gap-2 pb-2">
+        {messages.length === 0 ? (
+          <p className="py-8 text-center text-[14px] text-text-3">{MESSAGES.chat.noMessages}</p>
+        ) : (
+          messages.map((m) => {
+            const mine = m.senderId === myId;
+            return (
+              <div key={m.messageId} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[78%] whitespace-pre-wrap rounded-[16px] px-4 py-2.5 text-[15px] ${mine ? "bg-brand-500 text-white" : "bg-surface-2 text-text"}`}>
+                  {m.content}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
         <div ref={bottomRef} />
       </div>
 

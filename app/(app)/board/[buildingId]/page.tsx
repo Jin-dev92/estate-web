@@ -28,7 +28,8 @@ export default async function BoardListPage({
   return (
     <>
       <h1 className="mb-4 text-[22px] font-extrabold tracking-tight">건물 게시판</h1>
-      <PostForm buildingId={buildingId} />
+      {/* 목록이 먼저다 — 게시판에 들어온 사람은 글을 읽으러 온다.
+          작성 폼을 위에 두면 빈 입력칸이 화면을 차지하고 글이 스크롤 아래로 밀린다. */}
       <Card className="p-0">
         {posts.length === 0 ? (
           <EmptyState text={MESSAGES.board.empty} />
@@ -49,6 +50,10 @@ export default async function BoardListPage({
           </div>
         )}
       </Card>
+      {/* PostForm이 자체 제목("새 글 작성")을 갖고 있어 여기서 h2를 더하지 않는다. */}
+      <section className="mt-6">
+        <PostForm buildingId={buildingId} />
+      </section>
     </>
   );
 }

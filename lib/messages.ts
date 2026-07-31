@@ -29,14 +29,22 @@ export const MESSAGES = {
   common: {
     requestFailed: "요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.",
   },
-  building: { createFailed: "건물 생성에 실패했어요. 잠시 후 다시 시도해주세요." },
-  unit: { createFailed: "호실 생성에 실패했어요. 잠시 후 다시 시도해주세요." },
+  building: {
+    createFailed: "건물 생성에 실패했어요. 잠시 후 다시 시도해주세요.",
+    newBuilding: "새 건물 등록",
+    backToList: "건물 목록",
+  },
+  unit: {
+    createFailed: "호실 생성에 실패했어요. 잠시 후 다시 시도해주세요.",
+    newUnit: "새 호실 등록",
+  },
   board: {
     createFailed: "글 작성에 실패했어요. 잠시 후 다시 시도해주세요.",
     noBuildingTenant: "연결된 건물이 없어요",
     noBuildingOwner: "건물을 먼저 등록하세요",
     postNotFound: "글을 찾을 수 없어요",
     empty: "아직 글이 없어요",
+    backToList: "게시판",
     like: "좋아요",
     likeFailed: "좋아요 처리에 실패했어요. 잠시 후 다시 시도해주세요.",
   },
@@ -59,6 +67,8 @@ export const MESSAGES = {
     startOwner: "건물주에게 문의하기",
     startTenant: "작성자와 채팅",
     starting: "여는 중…",
+    noMessages: "아직 주고받은 메시지가 없어요. 먼저 말을 건네보세요.",
+    backToList: "채팅 목록",
   },
   settings: {
     title: "설정",

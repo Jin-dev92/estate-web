@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getToken } from "@/lib/session";
 import { backendGetPost, backendMe } from "@/lib/api";
 import { Card } from "@/components/ui/card";
@@ -43,6 +44,12 @@ export default async function BoardPostPage({
 
   return (
     <>
+      <Link
+        href={PAGE_ROUTES.board(buildingId)}
+        className="mb-3 inline-flex items-center gap-1 text-[13px] text-text-2 hover:text-text"
+      >
+        <span aria-hidden="true">←</span> {MESSAGES.board.backToList}
+      </Link>
       <Card>
         <div className="mb-2 flex items-center gap-2">
           <Chip tone={tone}>{label}</Chip>
