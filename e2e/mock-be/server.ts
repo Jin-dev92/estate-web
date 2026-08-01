@@ -31,6 +31,19 @@ import {
   mockKakaoOnboarding,
   mockKakaoTokenPair,
 } from "../fixtures/mock-data";
+import {
+  showcaseBuildings,
+  showcaseUnits,
+  showcaseChatRooms,
+  showcasePosts,
+  showcasePostDetail,
+  showcaseNotifications,
+  showcaseUnreadCount,
+} from "../fixtures/showcase-data";
+
+// README 스크린샷용 데이터 모드. E2E는 이 값을 주지 않으므로 기존 픽스처 그대로 돈다.
+// 자세한 배경은 e2e/fixtures/showcase-data.ts 헤더 주석 참고.
+const SHOWCASE = process.env.MOCK_SHOWCASE === "1";
 
 const PORT = 3099;
 
@@ -154,28 +167,32 @@ const server = createServer(async (req, res) => {
   // 메서드 가드로 읽기 경로가 다른 메서드까지 200을 반환하는 drift를 막는다.
   if (method === "GET") {
     if (url === "/me/leases") return send(res, 200, [mockLease()]);
-    if (url === "/buildings") return send(res, 200, [mockBuilding()]);
+    if (url === "/buildings") return send(res, 200, SHOWCASE ? showcaseBuildings() : [mockBuilding()]);
     // 방 목록: OWNER는 방 1건(목록 렌더), TENANT는 빈 목록(StartChatButton→start-chat).
+    // SHOWCASE에서는 양쪽 다 채운다 — 빈 목록은 E2E 분기용이라 스크린샷에선 빈약해 보인다.
     if (url === "/chat/rooms") {
+      if (SHOWCASE) return send(res, 200, showcaseChatRooms());
       const owner = (req.headers.authorization ?? "").includes(E2E_OWNER_TOKEN);
       return send(res, 200, owner ? [mockChatRoom()] : []);
     }
     // 방 히스토리(GET /chat/rooms/:id/messages) — 실시간 에코만 테스트하므로 빈 히스토리.
     if (/^\/chat\/rooms\/[^/]+\/messages$/.test(url)) return send(res, 200, []);
     // 알림·미읽음 개수 — 토큰 스코프(읽음 처리가 반영된다).
-    if (url === "/notifications/unread-count") return send(res, 200, unreadCountFor(bearer(req)));
-    if (url === "/notifications") return send(res, 200, getNotificationsFor(bearer(req)));
+    if (url === "/notifications/unread-count")
+      return send(res, 200, SHOWCASE ? showcaseUnreadCount() : unreadCountFor(bearer(req)));
+    if (url === "/notifications")
+      return send(res, 200, SHOWCASE ? showcaseNotifications() : getNotificationsFor(bearer(req)));
     // 설정 SSR(backendProfile)이 부르는 프로필 조회 — 토큰 스코프(이름 수정이 반영된다).
     if (url === "/auth/profile") return send(res, 200, getProfileFor(bearer(req)));
     // 게시판 목록(GET /buildings/:id/posts) — 상태있는 목: 작성 글이 반영된다.
     if (url.startsWith("/buildings/") && url.endsWith("/posts"))
-      return send(res, 200, listPosts());
+      return send(res, 200, SHOWCASE ? showcasePosts() : listPosts());
     // 호실 목록(GET /buildings/:id/units, OWNER 건물 상세).
     if (url.startsWith("/buildings/") && url.endsWith("/units"))
-      return send(res, 200, [mockUnit()]);
+      return send(res, 200, SHOWCASE ? showcaseUnits() : [mockUnit()]);
     // 게시글 상세(GET /posts/:id) — 상태있는 목: 작성 댓글이 반영된다.
     const postMatch = url.match(/^\/posts\/([^/]+)$/);
-    if (postMatch) return send(res, 200, getPostDetail(postMatch[1]));
+    if (postMatch) return send(res, 200, SHOWCASE ? showcasePostDetail(postMatch[1]) : getPostDetail(postMatch[1]));
     // 초대코드 미리보기(GET /invite-codes/:code/preview) — 공개(미인증).
     const preview = url.match(/^\/invite-codes\/([^/]+)\/preview$/);
     if (preview) return send(res, 200, mockInvitePreview(decodeURIComponent(preview[1])));

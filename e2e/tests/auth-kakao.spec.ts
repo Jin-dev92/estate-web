@@ -12,7 +12,9 @@ test("기존 카카오 연동 계정으로 콜백에 진입하면 대시보드�
   });
 
   await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByText("터전")).toBeVisible();
+  // 헤더 로고 링크로 특정한다. getByText("터전")은 대시보드의 계약 카드
+  // ("터전오너빌딩 201호")까지 잡아 strict mode violation이 난다.
+  await expect(page.getByRole("link", { name: "터 터전" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "내 계약" })).toBeVisible();
 
   // 카카오 로그인도 리프레시 쿠키를 심어야 15분 뒤 자동 갱신이 가능하다.

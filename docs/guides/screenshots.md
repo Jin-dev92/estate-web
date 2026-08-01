@@ -4,14 +4,24 @@
 
 목 백엔드(`e2e/mock-be`)에 붙인 프로덕션 빌드를 Playwright로 찍고 ffmpeg로 합칩니다. 실 백엔드나 개발 서버(`next dev`)를 쓰지 않는 이유는 아래 "함정"에 있습니다.
 
+## 0. 왜 `MOCK_SHOWCASE=1`인가
+
+E2E 픽스처(`e2e/fixtures/mock-data.ts`)는 "존재 확인"만 하면 되므로 목록 항목이 1건씩입니다. 그 상태로 찍으면 건물 1개·글 1개에 아래가 텅 비어 서비스가 실제보다 빈약해 보입니다.
+
+목 데이터를 그냥 늘리면 **E2E가 깨집니다** — `chat.spec.ts`의 "입주자는 채팅이 **없을 때** 건물주에게 문의를 시작해"가 빈 목록에 의존합니다. 그래서 스크린샷용 데이터를 `e2e/fixtures/showcase-data.ts`에 따로 두고 목 BE가 `MOCK_SHOWCASE=1`일 때만 씁니다. 환경변수가 없으면 E2E는 기존 픽스처 그대로 돕니다.
+
+SSR이라 Playwright `page.route()`로는 못 바꿉니다. 목록 데이터는 Server Component가 서버에서 fetch하므로 브라우저를 거치지 않습니다.
+
+showcase 데이터도 반환 타입을 `lib/api` 도메인 타입에 묶어 **drift 게이트 안에** 둡니다. 계약이 바뀌면 `pnpm typecheck`가 잡습니다.
+
 ## 1. 서버 세 개 띄우기
 
 ```bash
 # 이전 서버가 남아 있으면 반드시 먼저 죽인다(아래 함정 2 참고)
 lsof -ti:3000,3098,3099 | xargs kill 2>/dev/null
 
-pnpm e2e:mock-be &   # :3099
-pnpm e2e:mock-ws &   # :3098
+MOCK_SHOWCASE=1 pnpm e2e:mock-be &   # :3099 — 스크린샷용 데이터로 기동
+pnpm e2e:mock-ws &                    # :3098
 
 # NEXT_PUBLIC_WS_URL은 빌드타임에 번들로 박힌다 — build에도 반드시 준다(함정 1)
 BACKEND_URL=http://localhost:3099 \
@@ -30,6 +40,8 @@ E2E_INSECURE_COOKIE=1 \
 ```bash
 curl -s localhost:3099/health && curl -s localhost:3098/health
 grep -rl "localhost:3098" .next/static/chunks/ | head -1   # WS URL이 번들에 박혔는지
+# showcase 데이터가 적용됐는지(건물이 3건이어야 한다)
+curl -s -H "Authorization: Bearer e2e-owner-token-x" localhost:3099/buildings
 ```
 
 ## 2. 프레임 찍기
@@ -127,3 +139,11 @@ cp screens.gif <repo>/docs/screenshots/screens.gif
 **3. `fullPage: true`를 쓰지 않는다.** 화면마다 콘텐츠 높이가 달라 프레임 크기가 어긋나고 GIF가 깨집니다. 고정 뷰포트로 찍습니다.
 
 **4. `networkidle`을 그냥 기다리면 타임아웃 난다.** 알림 provider가 WebSocket을 열어두는 화면은 idle 상태가 오지 않습니다. 타임아웃을 주고 `.catch(() => {})`로 넘긴 뒤 찍습니다(렌더는 이미 끝나 있습니다).
+
+**5. `MOCK_SHOWCASE=1`을 빼먹으면 화면이 빈약하게 찍힌다.** 목 BE에만 주는 값입니다(Next 서버에는 필요 없습니다). 0절 참고.
+
+## 데이터를 고칠 때
+
+화면에 보이는 문구·건수를 바꾸려면 `e2e/fixtures/showcase-data.ts`만 고치면 됩니다. E2E 픽스처(`mock-data.ts`)는 건드리지 마세요 — 테스트가 그 값에 의존합니다.
+
+날짜는 `DAY()` 헬퍼로 고정값을 씁니다. `new Date()`를 쓰면 찍을 때마다 화면이 달라져 GIF를 다시 만들 때 불필요한 diff가 생깁니다.
