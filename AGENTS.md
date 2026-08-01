@@ -69,6 +69,9 @@ refactor: UserService 로직 개선
 
 - 유틸/로직성 모듈 및 핵심 기능에는 **테스트 코드 필수** (Vitest 사용)
 - 테스트 미작성 시 PR 리뷰 실패
+- **테스트 파일도 typecheck 대상이다.** `pnpm typecheck`가 앱(`tsconfig.json`)과 테스트(`tsconfig.vitest.json`) 두 프로그램을 검사한다. vitest는 트랜스파일만 하고 타입을 보지 않으므로 이 두 번째 패스가 유일한 방어선이다.
+- **fetch를 목할 때는 `test/mock-fetch.ts`의 헬퍼를 쓴다.** `vi.fn(async () => ...)`처럼 파라미터 없는 구현만 주면 `mock.calls`가 빈 튜플로 추론돼 `calls[0][1]` 접근이 타입에러가 나고, 그걸 `as RequestInit`로 덮으면 캐스팅이 또 깨진다. `mockFetch()`는 `vi.fn<typeof fetch>()`로 시그니처를 묶고, `initOf()`·`urlOf()`·`headersOf()`가 캐스팅 없이 값을 좁혀준다.
+- **앱 코드에 `describe`/`it`/`vi`를 쓰면 컴파일 에러가 난다**(루트 tsconfig에 vitest 전역 타입이 없다). 테스트 전역이 프로덕션 코드에 섞이는 것을 컴파일러가 막는다.
 
 ---
 

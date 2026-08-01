@@ -1,22 +1,23 @@
 import { vi } from "vitest";
 import { backendKakaoLogin, backendKakaoComplete } from "@/lib/api";
+import { mockFetch, initOf, urlOf } from "@/test/mock-fetch";
 
 afterEach(() => vi.unstubAllGlobals());
 
 it("backendKakaoLogin: POST /auth/kakao body", async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ onboardingToken: "o" }), { status: 201 }));
-  vi.stubGlobal("fetch", fetchMock);
+  const fetchMock = mockFetch(201, { onboardingToken: "o" });
   await backendKakaoLogin("c", "r");
-  expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/auth\/kakao$/);
-  expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
-  expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toEqual({ code: "c", redirectUri: "r" });
+  const init = initOf(fetchMock);
+  expect(urlOf(fetchMock)).toMatch(/\/auth\/kakao$/);
+  expect(init.method).toBe("POST");
+  expect(JSON.parse(String(init.body))).toEqual({ code: "c", redirectUri: "r" });
 });
 
 it("backendKakaoComplete: POST /auth/kakao/complete body", async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ accessToken: "a" }), { status: 201 }));
-  vi.stubGlobal("fetch", fetchMock);
+  const fetchMock = mockFetch(201, { accessToken: "a" });
   await backendKakaoComplete("o", "OWNER");
-  expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/auth\/kakao\/complete$/);
-  expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
-  expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toEqual({ onboardingToken: "o", role: "OWNER" });
+  const init = initOf(fetchMock);
+  expect(urlOf(fetchMock)).toMatch(/\/auth\/kakao\/complete$/);
+  expect(init.method).toBe("POST");
+  expect(JSON.parse(String(init.body))).toEqual({ onboardingToken: "o", role: "OWNER" });
 });

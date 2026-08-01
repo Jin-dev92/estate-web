@@ -13,7 +13,7 @@
     "e2e:burn": "playwright test --repeat-each=5",
     "e2e:mock-be": "tsx e2e/mock-be/server.ts",
     "e2e:mock-ws": "tsx e2e/mock-ws/server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.vitest.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
