@@ -1,0 +1,25 @@
+{
+  // Vitest 단위·컴포넌트 테스트 전용 typecheck 설정.
+  //
+  // 루트 tsconfig는 앱 코드만 본다(테스트는 exclude). 테스트 파일은 vitest가 트랜스파일만
+  // 하고 타입 검사를 하지 않으므로, 이 설정으로 `tsc --noEmit`을 한 번 더 돌려 커버한다.
+  // 분리한 이유: 루트에 `types: ["vitest/globals"]`를 두면 앱 코드에서도 describe/it/vi가
+  // 타입상 보여, 프로덕션 코드에 테스트 전역이 섞여도 컴파일러가 잡지 못한다.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+    "noEmit": true,
+    // 루트와 같은 .tsbuildinfo를 쓰면 두 프로그램이 서로의 캐시를 무효화한다.
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.vitest.tsbuildinfo"
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "vitest.setup.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", ".claude/worktrees"]
+}

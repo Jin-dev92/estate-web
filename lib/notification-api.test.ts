@@ -1,20 +1,18 @@
-import { vi } from "vitest";
 import { backendMarkAllRead, backendMarkOneRead } from "@/lib/api";
+import { mockFetch, initOf, urlOf } from "@/test/mock-fetch";
 
 it("backendMarkAllRead: PATCH /notifications/read를 Bearer로 호출", async () => {
-  const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-  vi.stubGlobal("fetch", fetchMock);
+  const fetchMock = mockFetch(200);
   await backendMarkAllRead("tok");
-  const [url, init] = fetchMock.mock.calls[0];
-  expect(String(url)).toMatch(/\/notifications\/read$/);
-  expect((init as RequestInit).method).toBe("PATCH");
-  expect((init as RequestInit).headers).toMatchObject({ Authorization: "Bearer tok" });
+  const init = initOf(fetchMock);
+  expect(urlOf(fetchMock)).toMatch(/\/notifications\/read$/);
+  expect(init.method).toBe("PATCH");
+  expect(init.headers).toMatchObject({ Authorization: "Bearer tok" });
 });
 
 it("backendMarkOneRead: PATCH /notifications/:id/read", async () => {
-  const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-  vi.stubGlobal("fetch", fetchMock);
+  const fetchMock = mockFetch(200);
   await backendMarkOneRead("tok", "n1");
-  expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/notifications\/n1\/read$/);
-  expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("PATCH");
+  expect(urlOf(fetchMock)).toMatch(/\/notifications\/n1\/read$/);
+  expect(initOf(fetchMock).method).toBe("PATCH");
 });
