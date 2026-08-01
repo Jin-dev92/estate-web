@@ -1,7 +1,7 @@
 # 터전 — estate-web (FE)
 
 건물주와 입주자를 잇는 커뮤니케이션 플랫폼 **터전**의 프론트엔드입니다.
-백엔드 [estate-server](https://github.com/Jin-dev92/estate-server-kafka)(NestJS · Prisma · Kafka)의
+백엔드 [estate-server](https://github.com/Jin-dev92/estate-server)(NestJS · Prisma · Kafka)의
 **git 서브모듈**(`web/`)로 관리됩니다.
 
 ## 화면
@@ -24,86 +24,54 @@ Playwright로 프로덕션 빌드를 목 백엔드에 붙여 찍었습니다(`do
 
 ## 주요 기능
 
-- 건물주·입주자 역할별 가입과 httpOnly 세션 인증
-- 역할별 대시보드와 건물·호실·초대코드 관리
-- 게시글·댓글 작성과 게시글 좋아요 낙관적 토글
-- Socket.IO 기반 1:1 채팅과 실시간 알림
-- 프로필·비밀번호 변경과 로그아웃
+백엔드 도메인(estate-server)과 1:1로 대응하며 전 영역 구현을 마쳤습니다.
+
+- **온보딩** — 로그인·역할 선택·건물주 가입·입주자 초대 통합 가입, 카카오 OAuth, httpOnly 세션
+- **대시보드** — OWNER/TENANT 역할별 홈
+- **건물 관리** — 건물·호실·초대코드 발급 (OWNER)
+- **게시판** — 목록·상세·작성·댓글·좋아요 낙관적 토글
+- **1:1 채팅** — Socket.IO 실시간, 재연결 대응
+- **알림 센터** — 실시간 수신·단건/전체 읽음·딥링크
+- **설정** — 프로필 이름 수정·비밀번호 변경·로그아웃
+
+> 후속: 채팅 자동 번역 — 백엔드 F2에 맞춰 추가.
 
 ## 디자인 시스템
 
 메인 브랜드 컬러는 **딥 틸그린 `#1F8A70`** (집·안심·신뢰). 레퍼런스 톤은 토스(명료)·당근(온기)·Airbnb(사진/카드 위계).
 모든 토큰(컬러·타이포·공간·모션)은 `app/globals.css`의 `:root` CSS 변수가 단일 출처이며 Tailwind 유틸로 매핑됩니다.
 
-- 디자인 시스템 스펙: estate-server `docs/superpowers/specs/2026-06-22-design-system-design.md`
-- 온보딩 설계 스펙: estate-server `docs/superpowers/specs/2026-06-22-onboarding-design.md`
+설계 스펙은 백엔드 레포에 있습니다 — [디자인 시스템](https://github.com/Jin-dev92/estate-server/blob/main/docs/superpowers/specs/frontend/2026-06-22-design-system-design.md) · [온보딩](https://github.com/Jin-dev92/estate-server/blob/main/docs/superpowers/specs/2026-06-22-onboarding-design.md) · [FE 스펙 전체](https://github.com/Jin-dev92/estate-server/tree/main/docs/superpowers/specs/frontend)
 
-## 마일스톤
+## 테스트
 
-화면을 영역별로 끊어 순차 구현합니다. 백엔드 도메인(estate-server)과 1:1로 대응합니다.
-
-| 단계 | 화면 / 기능 | 상태 |
-|---|---|---|
-| **FE-M0** | 온보딩 — 로그인 · 역할 선택 · 건물주 가입 · 입주자 초대 통합 가입 · httpOnly 세션 | ✅ 구현 |
-| **FE-M1** | 대시보드 홈 (OWNER / TENANT) | ✅ 구현 |
-| **FE-M2** | 건물 · 호실 · 초대코드 관리 (OWNER) | ✅ 구현 |
-| **FE-M3** | 게시판 (목록 · 상세 · 작성 · 댓글 · 좋아요 낙관적 토글) | ✅ 구현 |
-| **FE-M4** | 1:1 채팅 (WebSocket 실시간) | ✅ 구현 |
-| **FE-M5** | 알림 센터 (실시간 · 단건/전체 읽음 · 딥링크) | ✅ 구현 |
-| **FE-M6** | 설정 · 프로필 (이름 수정 · 비밀번호 변경 · 로그아웃) | ✅ 구현 |
-
-> 후속(F): OAuth 소셜 로그인, 채팅 자동 번역 — 백엔드 F1 · F2에 맞춰 추가.
-
-## E2E 테스트 (Playwright)
-
-목 BE(HTTP, `BACKEND_URL`) + 목 socket.io WS 서버 기반 결정론적 E2E. 인증은 `loginAs`/`loginAsOwner` prefill 픽스처(세션 쿠키 주입, 토큰으로 OWNER/TENANT 역할 분기)로 시작하고, 셀렉터는 시멘틱만, flaky는 burn-in으로 차단한다. `pnpm e2e`가 목 BE·목 WS·Next(프로덕션 빌드)를 자동 기동해 **chromium·firefox·webkit 3개 엔진**에서 전 스위트를 실행한다. 게시판은 상태있는 목으로 작성→반영(영속성)까지 검증하고, 목 응답은 `lib/api` 타입에 묶여(**drift 게이트**) 계약 변경을 `typecheck`로 잡는다. 상세 규약은 `AGENTS.md`의 E2E 섹션 참고.
-
-> CI 참고: 제약된 러너에서 webkit이 첫 네비게이션/reload에 간헐적 콜드스타트 지연을 겪어 일부 영속성 테스트가 1차 시도에서 stall할 수 있다. `retries: 2`(CI)로 흡수하므로 잡은 GREEN이며, 로그의 복구된 `✘`는 하드 실패가 아니다. 빈도는 `workers` 축소·타임아웃 상향으로 낮췄다(`playwright.config.ts`).
-
-| 커버리지 | 상태 |
+| 종류 | 범위 |
 |---|---|
-| 로그인 스모크 (성공→대시보드 / 실패→에러) | ✅ |
-| 카카오 OAuth 로그인 (콜백 진입 · 기존계정→대시보드 · 신규가입→역할선택→대시보드 · state 불일치 에러 · BE 에러) | ✅ |
-| 온보딩 가입 (건물주 가입→대시보드 · 입주자 초대코드 미리보기→가입→입주 · 무효 코드 에러) | ✅ |
-| 대시보드 홈 (TENANT '내 계약' · OWNER '내 건물'+보유 건물, 역할별 렌더) | ✅ |
-| 인증 가드 미들웨어 (미인증→보호 라우트 차단→`/login` · 인증 시 로그인/가입 페이지→대시보드 차단) | ✅ |
-| 설정 (프로필 렌더 · 이름 수정→재조회 반영 영속성 · 비밀번호 변경 성공/현재 비밀번호 불일치 · 로그아웃) | ✅ |
-| 건물·호실 (OWNER: 건물 목록→상세 호실 · 초대코드 발급→코드 노출) | ✅ |
-| 게시판 (목록 · 상세 · 글/댓글 작성→목록·상세 반영 영속성, 상태있는 목) | ✅ |
-| 알림 센터 (목록 렌더 · 단건 읽음+딥링크 · 전체 읽음→리로드 후 미읽음 배지 소거 영속성) | ✅ |
-| 채팅 (방 목록→진입 · start-chat 방생성 · 1:1 실시간 연결·전송→에코 · 비참가자 에러 · 재연결 · connect_error · 멀티유저 수신, 목 socket.io) | ✅ |
-| 폼 클라 검증 (가입 비번 8자 미만 · 초대코드 빈값 · 비번폼 현재비번 필수, 네트워크 전 차단) | ✅ |
-| 멀티브라우저 (chromium · firefox · webkit 3개 엔진에서 전 스위트 실행) | ✅ |
-| 목 BE 타입 drift 게이트 (`tsc --noEmit`로 `lib/api` 계약 변경 검출) | ✅ |
+| **Vitest** | 단위·컴포넌트 (앱 코드 + 테스트 파일 모두 `typecheck` 대상) |
+| **Playwright** | 핵심 사용자 흐름 E2E — chromium·firefox·webkit 3개 엔진 |
 
-### 후속 백로그 (완료 · 판단 기록)
+E2E는 목 BE(HTTP)와 목 Socket.IO 서버로 결정론적으로 돕니다. `pnpm e2e`가 목 서버들과 Next 프로덕션 빌드를 자동 기동합니다. 인증은 세션 쿠키를 주입하는 `loginAs`/`loginAsOwner` 픽스처로 시작하고, 셀렉터는 시멘틱만 쓰며, flaky는 burn-in으로 차단합니다.
 
-> 완료된 항목(알림·온보딩·초대코드·채팅·설정·대시보드·게시판/프로필/알림 영속성·폼검증·멀티브라우저·`MESSAGES.auth.login`·카카오 로그인 E2E·채팅 재연결/connect_error/멀티유저 E2E)은 위 커버리지 표에 반영. **2026-08-01 기준 남은 작업 없음** — 아래는 완료 기록이다.
+목 응답은 `lib/api` 도메인 타입에 묶여 있어(**drift 게이트**) 백엔드 계약이 바뀌면 `typecheck`가 잡습니다. 게시판·프로필·알림은 상태있는 목이라 작성→반영(영속성)까지 검증합니다.
 
-- [x] **[완료] Playwright 공식 에이전트 시험 평가**: Generator·Healer 시범 모두 완료 → **조건부 유지**로 결론(`docs/test/playwright-agents-review.md` 9절). 두 시범 모두 규약 준수율 100%·사람 수정 0건이었고, 특히 Healer는 `test.fixme()`로 도망가지 않고 원인을 고쳤다. 다만 Healer의 차별 가치(실 DOM 라이브 디버깅)가 MCP 서버 불안정으로 실증되지 않아 **기본 도구로 확대하지 않고 선택적으로** 쓴다. 운영 규칙 5개는 검토 문서 9절, 요약은 `AGENTS.md` E2E 절.
-- [x] **[완료] 드리프트 게이트 확장**: leases·buildings는 이미 `mockLease(): Lease`·`mockBuilding(): Building`으로 편입돼 있었고, 전수 조사에서 드러난 실제 빈틈은 **auth 도메인이 통째로 게이트 밖**이었다(`send()`의 `body: unknown` 때문에 인라인 응답은 타입 검사가 걸리지 않음). 로그인·갱신·로그아웃·카카오 2경로를 `TokenPair`·`KakaoLoginResult`에 묶은 빌더로 옮기고, `unreadCount` 이중 정의도 함수 반환 타입 역산으로 정리했다. 뮤테이션으로 게이트 작동 실증(`TokenPair`에 필드 추가 → 편입 후 2건 검출 / 편입 전 0건).
-- [x] **[완료] 테스트 typecheck 정비**: `tsconfig.vitest.json`을 분리해 테스트 파일도 `tsc --noEmit` 대상이 됐다(`pnpm typecheck`가 앱·테스트 두 프로그램을 검사). 루트의 `types:["vitest/globals"]` 스톱갭을 제거해 **앱 코드에 `it`/`vi`가 섞이면 컴파일 에러**가 난다. 46건의 타입에러는 근본 원인이 하나였다 — `vi.fn(async () => ...)`에 파라미터가 없어 `mock.calls`가 빈 튜플로 추론되고(TS2493), 그래서 `as RequestInit` 캐스팅이 연쇄로 깨졌다(TS2352). `test/mock-fetch.ts`에 `vi.fn<typeof fetch>()`로 시그니처를 묶은 헬퍼(`mockFetch`·`initOf`·`urlOf`·`headersOf`)를 두어 8개 파일에서 캐스팅을 전부 걷어냈다.
-
-> **에러 계약 편입은 검토 후 내렸다**(2026-08-01). 목의 에러 응답에 타입을 붙이는 안이었으나, `lib/api/client.ts`의 `call()`이 **에러 body를 아예 읽지 않는다**(`res.json()` 미호출 — status만 보고 `errorMap`으로 우리 문구를 꺼낸다). 소비자가 없는 데이터에 타입을 붙이면 죽은 선언만 남는다. 정작 위험한 status 변경(`401`→`403`)은 **body가 아니라 HTTP 상태라 body 타입으로는 잡히지 않는다** — 제안된 해법이 제기된 위험을 막지 못했다. 401 경로의 FE 동작은 이미 `auth-refresh.spec.ts`가 덮고 있고, BE 쪽 status 변경 감지는 계약 테스트(Pact)나 OpenAPI 스키마 생성의 영역이다. 다시 검토하려면 "FE가 BE 에러 코드를 소비할 것인가"라는 설계 결정부터 뒤집어야 한다(`lib/api/client.ts` 주석 참고).
-
-> **드리프트 게이트의 구조적 사각지대**: 타입은 "어떤 모양의 데이터가 오는가"만 말하고 "그게 무슨 뜻이고 서버가 무슨 일을 하는가"는 말하지 않는다. ① 같은 타입 다른 의미(날짜 ISO→epoch, 금액 원→전), ② 동작·규칙 변경(권한 규칙, 상태 전이), ③ 부작용(`PATCH /auth/password`가 전체 세션을 폐기한다는 사실 — 응답은 `{ok:true}`)은 타입에 흔적이 없다. 실례로 M15의 BE 리프레시 로직은 "재사용 탐지(가족 폐기)"와 "경합 패배(가족 유지)"가 **응답·에러 코드까지 동일한 401**인데 그 차이가 FE single-flight 설계의 전제였다. 이 층위는 BE 레포의 단위·통합 테스트가 담당하고(`AGENTS.md` E2E 절의 역할 분담), FE에서 더 밀려면 계약 테스트(Pact 류)나 BE OpenAPI 스키마 생성이 필요하다.
-
-> 백엔드(estate-server) 후속: `prisma-account` repo의 `provider` 런타임 검증(현재 KAKAO만이라 저위험) — estate-server 백로그로 관리.
+상세 규약과 한계는 [`AGENTS.md`](AGENTS.md)의 E2E 절, 시나리오별 스펙은 [`docs/test/`](docs/test/)에 있습니다.
 
 ## 시작하기
 
-### 요구사항
+Node.js 20.9 이상이 필요합니다(Next.js 16 요구사항). pnpm 버전은 `packageManager` 필드로 고정돼 있어 Corepack이 맞춰줍니다.
 
-- Node.js 20.9 이상 (Next.js 16 요구사항)
-- pnpm 9.15.0 (`packageManager` 필드로 고정)
-- 로컬 통합 개발 시 `http://localhost:3001`에서 실행 중인 `estate-server`
-
-Corepack으로 저장소에 고정된 pnpm 버전을 활성화합니다.
+이 레포는 estate-server의 `web/` 서브모듈입니다. **개발은 부모 레포의 `web/` 안에서 진행합니다.**
 
 ```bash
+git clone --recurse-submodules https://github.com/Jin-dev92/estate-server.git
+cd estate-server/web        # 이미 클론했다면: git submodule update --init --recursive
+
 corepack enable
 pnpm install
+pnpm dev                    # http://localhost:3000
 ```
+
+목 백엔드로 도는 E2E와 달리, 개발 서버는 `http://localhost:3001`에 실 `estate-server`가 떠 있어야 데이터가 보입니다.
 
 ### 환경변수
 
@@ -136,10 +104,6 @@ NEXT_PUBLIC_KAKAO_CLIENT_ID=
 | `pnpm e2e:ui` | Playwright UI 모드 실행 |
 | `pnpm e2e:burn` | 전 E2E를 5회 반복해 flaky 여부 확인 |
 
-```bash
-pnpm dev
-```
-
 ## 애플리케이션 구성
 
 페이지 조회는 Server Component가 백엔드를 직접 호출합니다. 브라우저에서 발생하는 쓰기 요청은 같은 출처의 Next.js Route Handler(`/api/*`)를 거쳐 `estate-server`로 전달되며, 세션 토큰은 httpOnly 쿠키로 관리합니다. 채팅과 알림만 `NEXT_PUBLIC_WS_URL`의 Socket.IO 서버에 연결합니다.
@@ -151,50 +115,17 @@ pnpm dev
   └─ 실시간 연결 ─> Socket.IO ─────────────────> estate-server
 ```
 
-## 서브모듈로 클론하기
-
-이 레포는 estate-server의 `web/` 서브모듈입니다. 부모 레포와 함께 받으려면:
-
-```bash
-git clone --recurse-submodules https://github.com/Jin-dev92/estate-server-kafka.git
-# 이미 클론했다면
-git submodule update --init --recursive
-```
-
-> 개발은 부모 레포의 `web/`(이 서브모듈) 안에서 진행합니다.
-
 ## 구조
 
+디렉토리 이름으로 짐작되지 않는 것만 적습니다.
+
 ```text
-app/
-  (app)/              # 인증 후 화면(대시보드·게시판·채팅·알림·설정)
-  api/                # 브라우저 요청을 백엔드로 전달하는 Route Handler
-  auth/               # 카카오 OAuth 콜백
-  login/              # 로그인
-  signup/             # 역할별 회원가입
-  globals.css         # 디자인 토큰과 Tailwind @theme 매핑
-components/
-  auth/               # 인증·역할 선택 폼
-  board/              # 게시판 폼·목록·댓글·좋아요
-  building/           # 건물·호실·초대코드
-  chat/               # 채팅 시작·대화
-  dashboard/          # 역할별 대시보드
-  notifications/      # 알림 목록·실시간 provider
-  settings/           # 프로필·비밀번호·로그아웃
-  ui/                 # 공통 UI 컴포넌트
-lib/
-  api/                # 도메인별 백엔드 API 클라이언트
-  chat/               # WebSocket과 채팅 표시 로직
-  notifications/      # 알림 딥링크
-  query/              # TanStack Query key·mutation
-  constants.ts        # 경로·역할·스토리지 키 단일 출처
-  messages.ts         # 사용자 노출 문구 단일 출처
-  schemas.ts          # Zod 폼 검증 스키마
-e2e/
-  fixtures/           # 인증·목 데이터 픽스처
-  mock-be/            # E2E용 HTTP 백엔드
-  mock-ws/            # E2E용 Socket.IO 서버
-  tests/              # Playwright 핵심 사용자 흐름
-docs/                 # 설계·계획·테스트 문서
-test/                 # Vitest 공통 테스트 유틸
+app/(app)/            # 인증 후 화면. 이 레이아웃이 세션 가드 역할을 한다
+app/api/              # 브라우저 쓰기 요청을 백엔드로 중계하는 Route Handler
+proxy.ts              # Next 16 proxy(구 middleware) — 액세스 토큰 자동 갱신
+lib/constants.ts      # 경로·역할·쿠키 키 단일 출처 (리터럴 하드코딩 금지)
+lib/messages.ts       # 사용자 노출 문구 단일 출처
+lib/api/              # 도메인별 백엔드 클라이언트. client.ts가 공유 인프라
+e2e/mock-be/          # E2E용 HTTP 백엔드 (MOCK_SHOWCASE=1이면 스크린샷용 데이터)
+e2e/fixtures/         # 인증 픽스처와 타입드 목 데이터(drift 게이트)
 ```
