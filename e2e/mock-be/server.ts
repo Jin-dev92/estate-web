@@ -68,10 +68,11 @@ const server = createServer(async (req, res) => {
 
   // 로그인: failEmail 이면 401, 그 외엔 토큰 발급(무상태 분기).
   //
-  // drift 게이트 범위 주의: 성공 응답은 타입드 빌더(mock*)로 lib/api 도메인 타입에 묶여
-  // 있지만 **에러 응답은 인라인이라 무보호**다(대응 타입이 FE에 없다). FE는 status만
-  // 보고 errorMap으로 분기하므로, BE가 status를 바꾸면(401→403 등) 여기도 E2E도
-  // 조용히 통과한다. 편입은 README 후속 백로그 "에러 계약 편입" 항목.
+  // drift 게이트 범위: 성공 응답은 타입드 빌더(mock*)로 도메인 타입에 묶여 있지만
+  // 에러 응답은 인라인이다. 의도된 것이다 — FE의 call()이 에러 body를 읽지 않고
+  // status만 보므로(lib/api/client.ts) 여기 body에 타입을 붙여도 아무도 소비하지 않는다.
+  // status 자체는 body가 아니라 HTTP 상태라 타입으로 잡을 수 없다. 이 층위는 E2E
+  // (auth-refresh.spec.ts의 401 경로)와 BE 레포 테스트가 담당한다.
   if (url === "/auth/login" && method === "POST") {
     const body = await readJson(req);
     if (body.email === E2E_CREDENTIALS.failEmail) {
