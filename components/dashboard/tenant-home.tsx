@@ -7,6 +7,15 @@ import Link from "next/link";
 import type { Lease, Notification, ChatRoom } from "@/lib/api";
 import { PAGE_ROUTES, LEASE_STATUS } from "@/lib/constants";
 
+/**
+ * 계약 한 줄에 보일 이름. BE가 이름을 주면 "건물명 호실명"으로 읽히게 쓰고,
+ * 없으면 예전처럼 호실 식별자로 폴백한다(BE가 이름을 채우기 전 데이터 대비).
+ */
+function leaseLabel(lease: Lease): string {
+  if (!lease.unitName) return `호실 ${lease.unitId.slice(0, 8)}`;
+  return lease.buildingName ? `${lease.buildingName} ${lease.unitName}` : lease.unitName;
+}
+
 export function TenantHome({ leases, notifications, chatRooms }: { leases: Lease[]; notifications: Notification[]; chatRooms: ChatRoom[] }) {
   const active = leases.filter((l) => l.status === LEASE_STATUS.ACTIVE);
   return (
@@ -16,8 +25,7 @@ export function TenantHome({ leases, notifications, chatRooms }: { leases: Lease
         {active.length === 0 ? <EmptyState text="활성화된 입주 계약이 없어요. 초대코드로 입주해보세요." /> :
           active.map((l) => (
             <div key={l.id} className="flex items-center justify-between">
-              {/* 이름 보강 전: 호실 식별자 표시(선행 보강 시 buildingName/unitName으로 교체) */}
-              <div className="text-[15px] font-semibold">호실 {l.unitId.slice(0, 8)}</div>
+              <div className="text-[15px] font-semibold">{leaseLabel(l)}</div>
               <Chip tone="success">입주 중</Chip>
             </div>
           ))}

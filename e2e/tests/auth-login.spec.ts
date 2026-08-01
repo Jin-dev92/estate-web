@@ -12,7 +12,9 @@ test("정상 로그인 시 대시보드로 이동한다", async ({ page, context
 
   await expect(page).toHaveURL(/\/dashboard/);
   // 인증 영역 헤더(터전)와 TENANT 대시보드 제목으로 도달 확인.
-  await expect(page.getByText("터전")).toBeVisible();
+  // 헤더 로고 링크로 특정한다. getByText("터전")은 대시보드의 계약 카드
+  // ("터전오너빌딩 201호")까지 잡아 strict mode violation이 난다.
+  await expect(page.getByRole("link", { name: "터 터전" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "내 계약" })).toBeVisible();
 
   // 로그인이 리프레시 쿠키까지 심어야 15분 뒤 자동 갱신이 가능하다.
