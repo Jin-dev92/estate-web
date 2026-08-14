@@ -50,7 +50,7 @@ Playwright로 프로덕션 빌드를 목 백엔드에 붙여 찍었습니다(`do
 | **Vitest** | 단위·컴포넌트 (앱 코드 + 테스트 파일 모두 `typecheck` 대상) |
 | **Playwright** | 핵심 사용자 흐름 E2E — chromium·firefox·webkit 3개 엔진 |
 
-E2E는 목 BE(HTTP)와 목 Socket.IO 서버로 결정론적으로 돕니다. `pnpm e2e`가 목 서버들과 Next 프로덕션 빌드를 자동 기동합니다. 인증은 세션 쿠키를 주입하는 `loginAs`/`loginAsOwner` 픽스처로 시작하고, 셀렉터는 시멘틱만 쓰며, flaky는 burn-in으로 차단합니다.
+E2E는 목 BE(HTTP)와 목 Socket.IO 서버로 결정론적으로 돕니다. `pnpm e2e`가 목 서버들과 Next 프로덕션 빌드를 자동 기동합니다. 인증은 세션 쿠키를 주입하는 `loginAs`/`loginAsOwner` 픽스처로 시작합니다. 셀렉터는 시멘틱만 쓰고, flaky는 burn-in으로 차단합니다.
 
 목 응답은 `lib/api` 도메인 타입에 묶여 있어(**drift 게이트**) 백엔드 계약이 바뀌면 `typecheck`가 잡습니다. 게시판·프로필·알림은 상태있는 목이라 작성→반영(영속성)까지 검증합니다.
 
@@ -71,11 +71,11 @@ pnpm install
 pnpm dev                    # http://localhost:3000
 ```
 
-목 백엔드로 도는 E2E와 달리, 개발 서버는 `http://localhost:3001`에 실 `estate-server`가 떠 있어야 데이터가 보입니다.
+목 백엔드로 도는 E2E와 달리 개발 서버는 `http://localhost:3001`에 실 `estate-server`가 떠 있어야 데이터가 보입니다.
 
 ### 환경변수
 
-프로젝트 루트에 `.env.local`을 만듭니다. 아래 값은 모두 선택 사항이며, 미설정 시 백엔드와 WebSocket은 `http://localhost:3001`을 사용합니다.
+프로젝트 루트에 `.env.local`을 만듭니다. 아래 값은 모두 선택 사항이며 미설정 시 백엔드와 WebSocket은 `http://localhost:3001`을 사용합니다.
 
 ```dotenv
 # 서버 컴포넌트와 Route Handler에서만 사용하는 백엔드 주소
@@ -88,7 +88,7 @@ NEXT_PUBLIC_WS_URL=http://localhost:3001
 NEXT_PUBLIC_KAKAO_CLIENT_ID=
 ```
 
-> `NEXT_PUBLIC_*` 변수는 브라우저 번들에 공개됩니다. 비밀 키나 서버 자격 증명은 이 접두사에 넣지 말고, 서버 전용 환경변수와 백엔드에서 관리하세요.
+> `NEXT_PUBLIC_*` 변수는 브라우저 번들에 공개됩니다. 비밀 키나 서버 자격 증명은 이 접두사에 넣지 말고 서버 전용 환경변수와 백엔드에서 관리하세요.
 
 ### 실행 및 검증
 
@@ -106,7 +106,7 @@ NEXT_PUBLIC_KAKAO_CLIENT_ID=
 
 ## 애플리케이션 구성
 
-페이지 조회는 Server Component가 백엔드를 직접 호출합니다. 브라우저에서 발생하는 쓰기 요청은 같은 출처의 Next.js Route Handler(`/api/*`)를 거쳐 `estate-server`로 전달되며, 세션 토큰은 httpOnly 쿠키로 관리합니다. 채팅과 알림만 `NEXT_PUBLIC_WS_URL`의 Socket.IO 서버에 연결합니다.
+페이지 조회는 Server Component가 백엔드를 직접 호출합니다. 브라우저에서 발생하는 쓰기 요청은 같은 출처의 Next.js Route Handler(`/api/*`)를 거쳐 `estate-server`로 전달되며 세션 토큰은 httpOnly 쿠키로 관리합니다. 채팅과 알림만 `NEXT_PUBLIC_WS_URL`의 Socket.IO 서버에 연결합니다.
 
 ```text
 브라우저
